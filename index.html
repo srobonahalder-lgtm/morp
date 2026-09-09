@@ -1,0 +1,3354 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UMAP · Uttarakhand Morphometric Analysis System | Web-GIS Portal</title>
+  
+  <!-- Typography matching exact editorial & bold tech style -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet GIS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #070d18;
+      --bg-surface: #0c1527;
+      --bg-card: rgba(13, 22, 40, 0.78);
+      --bg-card-hover: rgba(20, 34, 62, 0.95);
+      --border-subtle: rgba(56, 189, 248, 0.16);
+      --border-bright: rgba(56, 189, 248, 0.55);
+      --primary: #0284c7;
+      --accent: #00f0ff;
+      --accent-glow: rgba(0, 240, 255, 0.4);
+      --teal-glow: #2dd4bf;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --purple: #a855f7;
+      --btn-warm: #d97706;
+      --btn-warm-hover: #b45309;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-sub: #cbd5e1;
+      --font-tech-display: 'Orbitron', 'Space Grotesk', sans-serif;
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-subhead: 'Space Grotesk', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-dark: #f1f5f9;
+      --bg-surface: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.92);
+      --bg-card-hover: rgba(241, 245, 249, 0.98);
+      --border-subtle: rgba(2, 132, 199, 0.22);
+      --border-bright: rgba(2, 132, 199, 0.6);
+      --primary: #0284c7;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.25);
+      --teal-glow: #0d9488;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-sub: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* Navigation */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(7, 13, 24, 0.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.85rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    [data-theme="light"] nav {
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+    }
+
+    .brand-logo-3d {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(2,132,199,0.3) 0%, rgba(0,240,255,0.15) 100%);
+      border: 1.5px solid rgba(0, 240, 255, 0.7);
+      box-shadow: 0 4px 15px rgba(0, 240, 255, 0.35), inset 0 2px 6px rgba(255,255,255,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+    }
+    .brand:hover .brand-logo-3d {
+      transform: scale(1.1) rotate(-2deg);
+      box-shadow: 0 6px 25px rgba(0, 240, 255, 0.7), inset 0 2px 8px rgba(255,255,255,0.8);
+      border-color: #00f0ff;
+    }
+    .uk-top-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+      filter: contrast(1.15) brightness(1.05);
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-tech-display);
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #00f0ff;
+      line-height: 1.1;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+    }
+    .brand-text span {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 1.6px;
+      display: block;
+      font-weight: 600;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      position: relative;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      transition: all 0.25s ease;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: #00f0ff;
+      background: rgba(0, 240, 255, 0.08);
+      transform: translateY(-2px);
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+    }
+
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-bright);
+      color: var(--text-main);
+      padding: 0.45rem 1rem;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.25s ease;
+    }
+    .theme-toggle-btn:hover {
+      background: var(--accent);
+      color: #040811;
+      box-shadow: 0 0 15px var(--accent-glow);
+      transform: scale(1.05);
+    }
+
+    /* Hero */
+    header {
+      position: relative;
+      padding: 3.5rem 3rem 4rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .hero-meta-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 1.8rem 2rem;
+      backdrop-filter: blur(14px);
+      margin-bottom: 2.8rem;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+    .meta-top-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.2rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .meta-stat-item .lbl {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .meta-stat-item .val {
+      font-family: var(--font-tech-display);
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .hero-banner-3d {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border-bright);
+      background: radial-gradient(circle at center, #0c203d 0%, #050a14 100%);
+      box-shadow: inset 0 0 30px rgba(0, 240, 255, 0.2);
+    }
+    #hero-terrain-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .banner-hud-tag-top {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      line-height: 1.4;
+      text-shadow: 0 0 12px rgba(0,0,0,0.9);
+      pointer-events: none;
+    }
+    .banner-hud-tag-bottom {
+      position: absolute;
+      bottom: 14px;
+      left: 18px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: #38bdf8;
+      letter-spacing: 1.4px;
+      font-weight: 700;
+      text-shadow: 0 0 12px rgba(0,0,0,0.9);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      font-family: var(--font-tech-display);
+      font-size: 0.85rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      display: inline-block;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    }
+    
+    .hero-title {
+      font-family: var(--font-tech-display);
+      font-size: clamp(2.6rem, 5.2vw, 4.4rem);
+      font-weight: 900;
+      line-height: 1.12;
+      margin-bottom: 1.4rem;
+      letter-spacing: -0.5px;
+      color: #00f0ff;
+      text-shadow: 0 0 30px rgba(0, 240, 255, 0.35);
+    }
+    .hero-title em {
+      font-style: normal;
+      color: #ffffff;
+      font-weight: 900;
+    }
+    .hero-desc {
+      color: var(--text-sub);
+      font-size: 1.1rem;
+      max-width: 820px;
+      margin-bottom: 2.2rem;
+      line-height: 1.7;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      margin-bottom: 2.5rem;
+    }
+    .btn-warm {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      color: #fff;
+      padding: 0.95rem 2rem;
+      border-radius: 12px;
+      font-family: var(--font-subhead);
+      font-weight: 800;
+      font-size: 0.92rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 25px rgba(217, 119, 6, 0.4);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .btn-warm:hover {
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 10px 32px rgba(217, 119, 6, 0.65);
+    }
+    .btn-dark-outline {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-bright);
+      color: var(--text-main);
+      padding: 0.95rem 2rem;
+      border-radius: 12px;
+      font-family: var(--font-subhead);
+      font-weight: 700;
+      font-size: 0.92rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn-dark-outline:hover {
+      border-color: var(--accent);
+      background: rgba(0, 240, 255, 0.12);
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 0 25px var(--accent-glow);
+    }
+
+    .home-team-preview {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 1.8rem 2.2rem;
+      backdrop-filter: blur(14px);
+      margin-top: 1.5rem;
+    }
+    .home-team-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.8rem;
+    }
+    .home-team-header h3 {
+      font-family: var(--font-tech-display);
+      font-size: 1.05rem;
+      color: #00f0ff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .home-team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+    }
+    .team-badge-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.25s ease;
+    }
+    .team-badge-item:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 240, 255, 0.15);
+    }
+    .team-badge-item .role {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+    .team-badge-item .name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+    .team-badge-item .focus {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    section {
+      padding: 5rem 3rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .section-header {
+      margin-bottom: 3rem;
+    }
+    .section-tag {
+      font-family: var(--font-tech-display);
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      font-weight: 800;
+      margin-bottom: 0.7rem;
+      display: block;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    }
+    
+    .section-title {
+      font-family: var(--font-tech-display);
+      font-size: clamp(2.2rem, 4.2vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.15;
+      color: #00f0ff;
+      letter-spacing: -0.5px;
+      text-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
+    }
+    .section-subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 860px;
+      margin-top: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .insight-tri-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.8rem;
+    }
+    .tri-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 2.4rem 2.2rem;
+      backdrop-filter: blur(14px);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .tri-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-6px) scale(1.02);
+      background: var(--bg-card-hover);
+      box-shadow: 0 15px 35px rgba(0, 240, 255, 0.15);
+    }
+    .tri-card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.4rem;
+    }
+    .icon-green { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .icon-blue { background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.4); }
+    .icon-purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.4); }
+
+    .tri-card h3 {
+      font-family: var(--font-tech-display);
+      font-size: 1.1rem;
+      letter-spacing: 1.2px;
+      margin-bottom: 0.9rem;
+      color: #00f0ff;
+      font-weight: 800;
+    }
+    .tri-card p {
+      color: var(--text-sub);
+      font-size: 0.94rem;
+      line-height: 1.7;
+    }
+
+    .action-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.6rem;
+    }
+    .action-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 2rem 2rem;
+      position: relative;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .action-card:hover {
+      border-color: #00f0ff;
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 15px 35px rgba(0, 240, 255, 0.18);
+    }
+    .action-num {
+      position: absolute;
+      top: 1.6rem;
+      right: 1.6rem;
+      font-family: var(--font-tech-display);
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 800;
+    }
+    .action-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(45, 212, 191, 0.15);
+      border: 1px solid rgba(45, 212, 191, 0.4);
+      color: #2dd4bf;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 1.2rem;
+    }
+    .action-card h3 {
+      font-family: var(--font-body);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.6rem;
+    }
+    .action-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+
+    /* Dashboard & Filter Panel Grid Layout */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .filter-panel-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 1.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.3rem;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+    .filter-panel-header {
+      font-family: var(--font-tech-display);
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #00f0ff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.9rem;
+    }
+    .filter-panel-header span {
+      width: 9px;
+      height: 9px;
+      background: #00f0ff;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #00f0ff;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .form-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-weight: 700;
+    }
+    .form-input, .form-select {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 0.75rem 0.95rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: var(--font-body);
+      outline: none;
+      transition: all 0.25s ease;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .param-help-box {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      line-height: 1.55;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.85rem;
+      border-radius: 10px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .btn-view-analysis {
+      background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
+      color: #040811;
+      border: none;
+      padding: 0.95rem;
+      border-radius: 10px;
+      font-family: var(--font-tech-display);
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+    }
+    .btn-view-analysis:hover {
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.7);
+      transform: translateY(-3px) scale(1.02);
+    }
+    .btn-panel-action {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 0.7rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.25s;
+    }
+    .btn-panel-action:hover {
+      border-color: var(--accent);
+      background: rgba(0, 240, 255, 0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .tool-btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+    .tool-btn-small {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-sub);
+      padding: 0.55rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .tool-btn-small:hover, .tool-btn-small.active-tool {
+      border-color: var(--accent);
+      color: #00f0ff;
+      background: rgba(0, 240, 255, 0.18);
+      transform: translateY(-2px);
+      box-shadow: 0 0 12px rgba(0,240,255,0.4);
+    }
+
+    .opacity-slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .opacity-slider-row input {
+      flex: 1;
+      accent-color: var(--accent);
+    }
+
+    /* Right Main Dashboard: District Cards + Map Viewport */
+    .dashboard-main-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .district-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.95rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    .district-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.1rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: all 0.25s ease;
+    }
+    .district-item-card:hover, .district-item-card.selected {
+      border-color: var(--border-bright);
+      background: var(--bg-card-hover);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+    }
+    .district-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .district-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .district-title-wrap h4 {
+      font-family: var(--font-body);
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .district-title-wrap span {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+    }
+    .btn-locate-target {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-locate-target:hover {
+      color: var(--accent);
+      transform: scale(1.25);
+    }
+
+    .param-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+    .param-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-sub);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    .param-pill::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+    .param-pill:hover, .param-pill.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: #00f0ff;
+      color: #ffffff;
+      transform: translateY(-3px) scale(1.08);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
+      z-index: 10;
+    }
+
+    /* Map Interface Box */
+    .map-frame-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .map-top-bar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.85rem 1.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+    .map-top-bar h4 {
+      font-family: var(--font-tech-display);
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .map-toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .map-viewport-wrapper {
+      position: relative;
+      height: 580px;
+      width: 100%;
+    }
+    #map-view {
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+    }
+
+    /* District Touch/Hover Tooltip styling */
+    .leaflet-tooltip.district-map-tooltip {
+      background: rgba(7, 13, 24, 0.94);
+      border: 1.5px solid #00f0ff;
+      color: #ffffff;
+      font-family: var(--font-tech-display);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      border-radius: 8px;
+      padding: 6px 12px;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    .district-map-permanent-label {
+      background: rgba(7, 13, 24, 0.85);
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 6px;
+      padding: 2px 8px;
+      box-shadow: 0 0 10px rgba(0,240,255,0.4);
+    }
+    .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+      border-top-color: #00f0ff !important;
+    }
+
+    /* Collapsible Basemap Selector with Drop Down Arrow */
+    .basemap-dropdown-wrapper {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 400;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .basemap-toggle-btn {
+      background: rgba(10, 17, 32, 0.94);
+      border: 1.5px solid var(--border-bright);
+      color: #00f0ff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-family: var(--font-tech-display);
+      font-size: 0.76rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .basemap-toggle-btn:hover {
+      border-color: #00f0ff;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
+      transform: translateY(-2px);
+    }
+    .basemap-toggle-btn .arrow-icon {
+      font-size: 0.7rem;
+      transition: transform 0.3s ease;
+    }
+    .basemap-toggle-btn.open .arrow-icon {
+      transform: rotate(180deg);
+    }
+
+    .basemap-overlay-selector {
+      margin-top: 8px;
+      background: rgba(10, 17, 32, 0.96);
+      border: 1.5px solid var(--border-bright);
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: #fff;
+      backdrop-filter: blur(14px);
+      max-height: 380px;
+      overflow-y: auto;
+      display: none; /* hidden by default, visible on click */
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+      min-width: 210px;
+      animation: fadeInDropdown 0.2s ease-out;
+    }
+    .basemap-overlay-selector.visible {
+      display: flex;
+    }
+    @keyframes fadeInDropdown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    [data-theme="light"] .basemap-toggle-btn,
+    [data-theme="light"] .basemap-overlay-selector {
+      background: rgba(255, 255, 255, 0.94);
+      color: #0f172a;
+    }
+    .basemap-option-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.74rem;
+      transition: color 0.2s;
+    }
+    .basemap-option-item:hover {
+      color: var(--accent);
+    }
+    .basemap-option-item input { accent-color: var(--accent); }
+
+    .map-district-hud {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      z-index: 400;
+      background: rgba(7, 13, 24, 0.94);
+      border: 1.5px solid var(--accent);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #fff;
+      pointer-events: none;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .measure-hud {
+      position: absolute;
+      bottom: 60px;
+      left: 15px;
+      z-index: 400;
+      background: rgba(7, 13, 24, 0.95);
+      border: 1.5px solid #10b981;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: #10b981;
+      display: none;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .map-disclaimer-bar {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+      padding: 0.75rem 1.4rem;
+      font-family: var(--font-body);
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.5;
+    }
+
+    /* 13 Districts Point Pulse Marker */
+    .district-marker-pulse {
+      width: 14px;
+      height: 14px;
+      background-color: #00f0ff;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 12px #00f0ff, 0 0 20px #00f0ff;
+      cursor: pointer;
+      animation: pulseGlow 2s infinite;
+    }
+    @keyframes pulseGlow {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); }
+      70% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
+    }
+
+    /* Advanced Analytics & Statistical Summary Suite */
+    .analytics-controls {
+      display: flex;
+      gap: 1.4rem;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    /* 7-Card Statistical Summary Grid */
+    .stat-summary-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1.1rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-box-mini {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.2rem 1.1rem;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-box-mini:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 240, 255, 0.15);
+    }
+    .stat-box-mini .s-label {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+    .stat-box-mini .s-val {
+      font-family: var(--font-tech-display);
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: #00f0ff;
+    }
+    .stat-box-mini .s-unit {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-sub);
+    }
+
+    .stat-section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.8rem;
+      margin-bottom: 2.4rem;
+    }
+
+    .stat-card-expanded {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 1.8rem;
+      border-radius: 18px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      position: relative;
+    }
+    .stat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.8rem;
+    }
+    .stat-card-header h3 {
+      font-family: var(--font-tech-display);
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-badge-callout {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: #00f0ff;
+    }
+
+    .rankings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.8rem;
+      margin-bottom: 2.8rem;
+    }
+    .ranking-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 1.8rem;
+      border-radius: 18px;
+      backdrop-filter: blur(12px);
+    }
+    .ranking-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+
+    /* Heatmap Matrix */
+    .heatmap-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 2rem;
+      border-radius: 18px;
+      overflow-x: auto;
+      margin-bottom: 2.8rem;
+      position: relative;
+    }
+    .heatmap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      text-align: center;
+    }
+    .heatmap-table th, .heatmap-table td {
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .heatmap-table th {
+      background: var(--bg-surface);
+      color: #00f0ff;
+      font-family: var(--font-tech-display);
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    .heatmap-cell {
+      cursor: pointer;
+      position: relative;
+    }
+    .heatmap-cell:hover {
+      transform: scale(1.35) translateZ(20px);
+      outline: 2px solid #00f0ff;
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.9), inset 0 0 10px #ffffff;
+      z-index: 50;
+      border-radius: 6px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 8px #000;
+    }
+
+    #heatmap-float-hud {
+      position: fixed;
+      display: none;
+      pointer-events: none;
+      background: rgba(8, 14, 28, 0.96);
+      border: 1.5px solid #00f0ff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #fff;
+      z-index: 9999;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+      transform: translate(-50%, -120%);
+      white-space: nowrap;
+      backdrop-filter: blur(12px);
+    }
+
+    /* Interactive Ranking Table with Sort Indicators */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 1.8rem;
+      overflow-x: auto;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+    .data-table th {
+      background: var(--bg-surface);
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--accent);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .data-table th:hover {
+      background: rgba(0, 240, 255, 0.15);
+      color: #ffffff;
+    }
+    .data-table th span.sort-arrow {
+      font-size: 0.65rem;
+      margin-left: 4px;
+      opacity: 0.7;
+    }
+    .data-table th.active-sort span.sort-arrow {
+      opacity: 1;
+      color: #ffffff;
+      font-weight: 900;
+    }
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .data-table tr:hover {
+      background: rgba(0, 240, 255, 0.08);
+    }
+
+    /* 3D Morphometric Terrain Explorer */
+    #terrain3d-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border-bright);
+      overflow: hidden;
+      background: radial-gradient(circle at center, #0a1324 0%, #02050b 100%);
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8);
+    }
+    #terrain3d-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .terrain-overlay-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 30;
+      background: rgba(10, 17, 32, 0.92);
+      border: 1px solid var(--border-bright);
+      padding: 16px;
+      border-radius: 14px;
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 250px;
+    }
+    .terrain-hud {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(10, 17, 32, 0.92);
+      border: 1px solid var(--border-subtle);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--accent);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #threejs-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: rgba(8, 14, 28, 0.96);
+      border: 1.5px solid #00f0ff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #fff;
+      z-index: 50;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+      transform: translate(-50%, -120%);
+      white-space: nowrap;
+    }
+
+    /* Footer */
+    footer {
+      background: #040811;
+      border-top: 1px solid var(--border-subtle);
+      padding: 4.5rem 3rem 2.5rem;
+    }
+    .footer-grid {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1.5fr;
+      gap: 3rem;
+      margin-bottom: 3.5rem;
+    }
+    .footer-col h4 {
+      font-family: var(--font-tech-display);
+      font-size: 0.95rem;
+      color: #00f0ff;
+      margin-bottom: 1.2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .footer-col a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: all 0.2s;
+    }
+    .footer-col a:hover {
+      color: #00f0ff;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+      transform: translateX(4px);
+    }
+    .footer-bottom {
+      max-width: 1280px;
+      margin: 0 auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 2rem;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: #64748b;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .stat-section-grid { grid-template-columns: 1fr; }
+      .rankings-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      nav { padding: 0.8rem 1.5rem; }
+      section, header { padding-left: 1.5rem; padding-right: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating HUD for Heatmap Touch/Hover Popups -->
+  <div id="heatmap-float-hud"></div>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="#home" class="brand">
+      <div class="brand-logo-3d" title="Uttarakhand Web-GIS Portal">
+        <img 
+          src="https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=200&q=80" 
+          alt="Uttarakhand Himalayas" 
+          class="uk-top-img"
+          onerror="this.style.display='none'; document.getElementById('fallback-svg-logo').style.display='block';"
+        />
+        <svg id="fallback-svg-logo" viewBox="0 0 100 100" style="display:none; width:34px; height:34px;">
+          <rect width="100" height="100" rx="20" fill="#0284c7"/>
+          <path d="M20,74 L42,36 L56,58 L70,30 L84,74 Z" fill="#ffffff"/>
+          <text x="50" y="86" text-anchor="middle" font-family="'Orbitron', sans-serif" font-weight="900" font-size="28" fill="#00f0ff">U</text>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>UMAP</h1>
+        <span>UTTARAKHAND · WEB-GIS</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#home">Home</a>
+      <a href="#intro">Introduction</a>
+      <a href="#applications">Application</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#analytics">Indices</a>
+      <a href="#viz3d">3D Terrain</a>
+      <a href="#about">About</a>
+    </div>
+    <button class="theme-toggle-btn" id="btn-theme-toggle">☼ LIGHT</button>
+  </nav>
+
+  <!-- Hero Header -->
+  <header id="home">
+    <div class="hero-meta-panel">
+      <div class="meta-top-grid">
+        <div class="meta-stat-item">
+          <div class="lbl">REGION</div>
+          <div class="val">Uttarakhand, India</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="lbl">DISTRICTS COVERED</div>
+          <div class="val">13</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="lbl">MORPHOMETRIC INDICES</div>
+          <div class="val">6</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="lbl">WEB-GIS APPLICATIONS</div>
+          <div class="val">78</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="lbl">REFERENCE SYSTEM</div>
+          <div class="val">WGS 84</div>
+        </div>
+      </div>
+
+      <div class="hero-banner-3d">
+        <canvas id="hero-terrain-canvas"></canvas>
+        <div class="banner-hud-tag-top">
+          3D TERRAIN MODEL<br>
+          RELIEF / DRAINAGE<br>
+          30.06° N 79.10° E
+        </div>
+        <div class="banner-hud-tag-bottom">
+          TERRAIN SURFACE · ELEVATION BANDS
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-tag">— M.SC. REMOTE SENSING & GIS · WEB-GIS PORTAL</div>
+      <h1 class="hero-title">
+        Terrain read as <em>numbers</em>,<br>district by district.
+      </h1>
+      <p class="hero-desc">
+        A centralized Web-GIS portal linking to district-wise morphometric analysis applications across Uttarakhand — relative & absolute relief, dissection index, drainage density, ruggedness and wetness index, each hosted as an independent interactive map.
+      </p>
+      <div class="hero-actions">
+        <a href="#dashboard" class="btn-warm">📚 Explore Districts</a>
+        <a href="#dashboard" class="btn-dark-outline">🗺 View Interactive Map</a>
+        <a href="#home-team" class="btn-dark-outline" style="border-color: #00f0ff;">👥 About Team</a>
+      </div>
+
+      <div class="home-team-preview" id="home-team">
+        <div class="home-team-header">
+          <h3>👥 Project Research & GIS Development Team</h3>
+          <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent);">M.SC. REMOTE SENSING & GIS COLLABORATION</span>
+        </div>
+        <div class="home-team-grid">
+          <div class="team-badge-item">
+            <span class="role">GIS Research Lead</span>
+            <span class="name">Srobona Halder</span>
+            <span class="focus">Uttarkashi, Chamoli & Rudraprayag Morphometry</span>
+          </div>
+          <div class="team-badge-item">
+            <span class="role">Spatial Analyst</span>
+            <span class="name">Tania Biswas</span>
+            <span class="focus">Tehri, Pauri Garhwal & Dehradun Basins</span>
+          </div>
+          <div class="team-badge-item">
+            <span class="role">Hydrological Modeler</span>
+            <span class="name">Soumen Pal</span>
+            <span class="focus">Pithoragarh, Bageshwar & Almora Indices</span>
+          </div>
+          <div class="team-badge-item">
+            <span class="role">Cartographic Specialist</span>
+            <span class="name">Wasim Aktar</span>
+            <span class="focus">Champawat & Nainital Terrain Assessment</span>
+          </div>
+          <div class="team-badge-item">
+            <span class="role">Terrain Computing</span>
+            <span class="name">Torsha Biswas</span>
+            <span class="focus">Udham Singh Nagar & Haridwar Drainage</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Introduction Section -->
+  <section id="intro">
+    <div class="section-header">
+      <span class="section-tag">SCIENTIFIC FOUNDATION</span>
+      <h2 class="section-title">What is Morphometric Analysis?</h2>
+      <p class="section-subtitle">
+        Morphometric analysis is the quantitative measurement and mathematical evaluation of the Earth's surface — the shape, dimension and configuration of landforms and drainage networks. By deriving indices from elevation models and stream networks, it converts terrain into numbers that reveal how a river basin stores, routes and releases water and sediment.
+      </p>
+    </div>
+
+    <div class="insight-tri-grid">
+      <div class="tri-card">
+        <div class="tri-card-icon icon-green">⛰️</div>
+        <h3>RELIEF ASPECT</h3>
+        <p>Absolute Relief, Relative Relief, Dissection Index and Ruggedness quantify vertical terrain energy — the driver of erosion intensity and runoff velocity.</p>
+      </div>
+      <div class="tri-card">
+        <div class="tri-card-icon icon-blue">🌊</div>
+        <h3>DRAINAGE ASPECT</h3>
+        <p>Drainage Density and Stream Frequency describe how finely a landscape is carved by channels — a proxy for permeability, vegetation and runoff potential.</p>
+      </div>
+      <div class="tri-card">
+        <div class="tri-card-icon icon-purple">💧</div>
+        <h3>HYDROLOGIC INDICES</h3>
+        <p>TWI, SPI and STI model wetness accumulation, stream power and sediment transport capacity — core inputs for flood and soil-loss assessment.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Applications Section -->
+  <section id="applications">
+    <div class="section-header">
+      <span class="section-tag">FROM MEASUREMENT TO ACTION</span>
+      <h2 class="section-title">Where the Analysis Makes a Difference</h2>
+      <p class="section-subtitle">
+        Morphometric evidence gives planners and researchers a clearer view of landscape behaviour. These are the practical decisions the dashboard helps inform across Uttarakhand.
+      </p>
+    </div>
+
+    <div class="action-grid-6">
+      <div class="action-card">
+        <div class="action-num">01</div>
+        <div class="action-icon">🛡️</div>
+        <h3>Watershed stewardship</h3>
+        <p>Prioritise sub-basins for restoration, recharge work and long-term catchment care.</p>
+      </div>
+      <div class="action-card">
+        <div class="action-num">02</div>
+        <div class="action-icon">🌧️</div>
+        <h3>Flood exposure</h3>
+        <p>Read terrain and drainage signals to support screening for runoff concentration and flood risk.</p>
+      </div>
+      <div class="action-card">
+        <div class="action-num">03</div>
+        <div class="action-icon">🔀</div>
+        <h3>Basin planning</h3>
+        <p>Compare neighbouring districts and shape interventions around the way water actually travels.</p>
+      </div>
+      <div class="action-card">
+        <div class="action-num">04</div>
+        <div class="action-icon">🌱</div>
+        <h3>Soil protection</h3>
+        <p>Locate terrain where slope, relief and flow energy may increase susceptibility to soil loss.</p>
+      </div>
+      <div class="action-card">
+        <div class="action-num">05</div>
+        <div class="action-icon">💧</div>
+        <h3>Water resources</h3>
+        <p>Use wetness and drainage characteristics to guide investigations of recharge and groundwater potential.</p>
+      </div>
+      <div class="action-card">
+        <div class="action-num">06</div>
+        <div class="action-icon">🗺️</div>
+        <h3>Regional decisions</h3>
+        <p>Bring comparable spatial evidence into infrastructure, land-use and climate adaptation planning.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard Section: Filter Panel & Web-GIS Map -->
+  <section id="dashboard">
+    <div class="section-header">
+      <span class="section-tag">— EXPLORE MORPHOMETRIC ANALYSIS</span>
+      <h2 class="section-title">District directory & interactive map</h2>
+      <p class="section-subtitle">
+        Search or filter the districts below, then open any morphometric index directly in its own Web-GIS application. Selecting a district also highlights and focuses its geographic boundary on the map.
+      </p>
+    </div>
+
+    <div class="dashboard-layout">
+      <!-- Left Filter Panel -->
+      <aside class="filter-panel-box">
+        <div class="filter-panel-header">
+          <span></span> FILTER PANEL
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">SEARCH DISTRICT</label>
+          <input type="text" id="district-search-input" class="form-input" placeholder="Type to filter..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">SELECT DISTRICT</label>
+          <select id="district-select" class="form-select">
+            <option value="Chamoli">Chamoli</option>
+            <option value="Uttarkashi">Uttarkashi</option>
+            <option value="Rudraprayag">Rudraprayag</option>
+            <option value="Tehri Garhwal">Tehri Garhwal</option>
+            <option value="Pauri Garhwal">Pauri Garhwal</option>
+            <option value="Dehradun">Dehradun</option>
+            <option value="Pithoragarh">Pithoragarh</option>
+            <option value="Bageshwar">Bageshwar</option>
+            <option value="Almora">Almora</option>
+            <option value="Champawat">Champawat</option>
+            <option value="Nainital">Nainital</option>
+            <option value="Udham Singh Nagar">Udham Singh Nagar</option>
+            <option value="Haridwar">Haridwar</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">SELECT MORPHOMETRIC PARAMETER</label>
+          <select id="parameter-select" class="form-select">
+            <option value="ar">Absolute Relief (AR)</option>
+            <option value="rr">Relative Relief (RR)</option>
+            <option value="di">Dissection Index (DI)</option>
+            <option value="dd">Drainage Density (DD)</option>
+            <option value="tri">Topographic Ruggedness Index (TRI)</option>
+            <option value="twi">Topographic Wetness Index (TWI)</option>
+          </select>
+        </div>
+
+        <div class="param-help-box" id="param-help-text">
+          Maximum elevation of the watershed above mean sea level. High AR marks structurally elevated terrain with strong potential energy for erosion.
+        </div>
+
+        <button class="btn-view-analysis" id="btn-view-live-app">✧ VIEW ANALYSIS</button>
+        <button class="btn-panel-action" id="btn-reset-filter">↺ RESET VIEW</button>
+        <button class="btn-panel-action" id="btn-panel-csv">📊 EXPORT CSV</button>
+        <button class="btn-panel-action" id="btn-panel-chart-png">🖼 EXPORT CHART PNG</button>
+
+        <div class="form-group" style="margin-top:0.4rem;">
+          <label class="form-label">MAP ANALYTICS TOOLS</label>
+          <div class="tool-btn-grid">
+            <button class="tool-btn-small" id="tool-measure">📏 MEASURE</button>
+            <button class="tool-btn-small" id="tool-labels">🏷️ LABELS</button>
+            <button class="tool-btn-small" id="tool-bookmark">🔖 BOOKMARK</button>
+            <button class="tool-btn-small" id="tool-fullscreen">⛶ FULLSCREEN</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="opacity-slider-row">
+            <label class="form-label">LAYER OPACITY</label>
+            <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent);" id="opacity-val">100%</span>
+          </div>
+          <input type="range" id="layer-opacity-slider" min="10" max="100" value="100" />
+        </div>
+
+        <div style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted); text-align:center; padding-top:0.5rem; border-top:1px solid var(--border-subtle);">
+          💾 LOAD RESEARCH DATA / LOAD CSV
+        </div>
+      </aside>
+
+      <!-- Right Main Column: District List & Map -->
+      <div class="dashboard-main-col">
+        <div class="district-cards-list" id="district-cards-container"></div>
+
+        <!-- Interactive Map Frame with 13 Uttarakhand District Divisions -->
+        <div class="map-frame-box" id="map-frame-container">
+          <div class="map-top-bar">
+            <h4>🗺️ Interactive Web-GIS Map · Uttarakhand District Divisions & Points</h4>
+            <div class="map-toolbar-actions">
+              <button class="tool-btn-small" id="map-tool-measure">📏 MEASURE</button>
+              <button class="tool-btn-small" id="map-tool-labels">🏷️ LABELS</button>
+              <button class="tool-btn-small" id="map-tool-bookmark">🔖 BOOKMARK</button>
+              <button class="tool-btn-small" id="map-tool-full">⛶ FULL</button>
+            </div>
+          </div>
+
+          <div class="map-viewport-wrapper">
+            <div id="map-view"></div>
+
+            <div class="map-district-hud" id="map-hud-info">
+              <span>📍</span> <b>HOVER / CLICK ANY DISTRICT MARKER TO VIEW MORPHOMETRIC DATA</b>
+            </div>
+
+            <div class="measure-hud" id="measure-hud">
+              📏 Distance: <b id="measure-distance-val">0.00 km</b> (Click map to add points · Click Measure to finish)
+            </div>
+
+            <!-- Basemap Selector with Dropdown Button (Hidden by default, shows on click) -->
+            <div class="basemap-dropdown-wrapper">
+              <button class="basemap-toggle-btn" id="basemap-toggle-btn" title="Toggle Base Layers">
+                <span>🗺️ Base Layers</span>
+                <span class="arrow-icon">▼</span>
+              </button>
+
+              <div class="basemap-overlay-selector" id="basemap-overlay-selector">
+                <label class="basemap-option-item">
+                  <input type="radio" name="basemap" value="cartoDark" checked /> Carto Dark Matter
+                </label>
+                <label class="basemap-option-item">
+                  <input type="radio" name="basemap" value="osm" /> OpenStreetMap (OSM)
+                </label>
+                <label class="basemap-option-item">
+                  <input type="radio" name="basemap" value="googleSat" /> Google Satellite
+                </label>
+                <label class="basemap-option-item">
+                  <input type="radio" name="basemap" value="googleHybrid" /> Google Hybrid
+                </label>
+                <label class="basemap-option-item">
+                  <input type="radio" name="basemap" value="esriSat" /> Esri World Imagery
+                </label>
+                <label class="basemap-option-item">
+                  <input type="radio" name="basemap" value="cartoLight" /> Carto Light
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="map-disclaimer-bar">
+            <span>ℹ️</span> 13 District interactive markers & boundary vectors active. Click any marker or polygon to view the district name and morphometric indicators, or fly directly to focus.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Advanced Analytics Section with 13 Districts Statistical Analysis Suite -->
+  <section id="analytics">
+    <div class="section-header">
+      <span class="section-tag">STATE-WIDE COMPARISON & STATISTICAL ANALYSIS</span>
+      <h2 class="section-title">Advanced Morphometric Analytics</h2>
+      <p class="section-subtitle">
+        13 District Statistical Summary (Mean, Median, Min, Max, Range, Std Dev, CV%) · State vs. District Benchmarks · Watershed Frequency Histogram · Multi-variable Radar Diagram · Interactive Table.
+      </p>
+    </div>
+
+    <div class="analytics-controls">
+      <label class="form-label" style="color:var(--text-main); font-size:0.82rem;">EVALUATION PARAMETER:</label>
+      <select id="analytics-param-select" class="form-select" style="min-width: 280px;">
+        <option value="ar">Absolute Relief (AR, m)</option>
+        <option value="rr">Relative Relief (RR, m/km²)</option>
+        <option value="di">Dissection Index (DI)</option>
+        <option value="dd">Drainage Density (DD, km/km²)</option>
+        <option value="tri">Terrain Ruggedness Index (TRI)</option>
+        <option value="twi">Wetness Index (TWI)</option>
+      </select>
+      <button class="btn-panel-action" id="btn-export-all-csv">📥 EXPORT FULL CSV</button>
+    </div>
+
+    <!-- 13 Districts Statistical Analysis Cards (Mean, Median, Min, Max, Range, Std Dev, CV%) -->
+    <div class="stat-summary-dashboard" id="stat-summary-grid">
+      <div class="stat-box-mini">
+        <span class="s-label">MEAN (μ)</span>
+        <span class="s-val" id="stat-mean">--</span>
+        <span class="s-unit" id="stat-unit-mean">m</span>
+      </div>
+      <div class="stat-box-mini">
+        <span class="s-label">MEDIAN (Q2)</span>
+        <span class="s-val" id="stat-median">--</span>
+        <span class="s-unit" id="stat-unit-median">m</span>
+      </div>
+      <div class="stat-box-mini">
+        <span class="s-label">MINIMUM</span>
+        <span class="s-val" id="stat-min" style="color:#10b981;">--</span>
+        <span class="s-unit" id="stat-unit-min">m</span>
+      </div>
+      <div class="stat-box-mini">
+        <span class="s-label">MAXIMUM</span>
+        <span class="s-val" id="stat-max" style="color:#f43f5e;">--</span>
+        <span class="s-unit" id="stat-unit-max">m</span>
+      </div>
+      <div class="stat-box-mini">
+        <span class="s-label">RANGE (Δ)</span>
+        <span class="s-val" id="stat-range" style="color:#f59e0b;">--</span>
+        <span class="s-unit" id="stat-unit-range">m</span>
+      </div>
+      <div class="stat-box-mini">
+        <span class="s-label">STD DEVIATION (σ)</span>
+        <span class="s-val" id="stat-std" style="color:#a855f7;">--</span>
+        <span class="s-unit" id="stat-unit-std">m</span>
+      </div>
+      <div class="stat-box-mini">
+        <span class="s-label">COEFF. OF VARIATION (CV)</span>
+        <span class="s-val" id="stat-cv" style="color:#2dd4bf;">--</span>
+        <span class="s-unit">%</span>
+      </div>
+    </div>
+
+    <!-- 1. State vs District Mean & 2. Watershed Frequency Histogram -->
+    <div class="stat-section-grid">
+      <div class="stat-card-expanded">
+        <div class="stat-card-header">
+          <h3 style="color:#00f0ff;">📊 STATE MEAN VS. DISTRICT VALUES</h3>
+          <span class="stat-badge-callout" id="state-mean-badge">STATE MEAN: --</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted);">
+          Touch or hover any bar to popup benchmark deltas and compare the active district against Uttarakhand's baseline.
+        </p>
+        <canvas id="stateVsDistrictChart" height="230"></canvas>
+      </div>
+
+      <div class="stat-card-expanded">
+        <div class="stat-card-header">
+          <h3 style="color:#2dd4bf;">📈 WATERSHED FREQUENCY HISTOGRAM</h3>
+          <span class="stat-badge-callout">13 DISTRICT FREQUENCY</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted);">
+          Binned frequency distribution across morphometric intervals. Hover/touch to see exact district counts and watershed percentages.
+        </p>
+        <canvas id="frequencyHistogramChart" height="230"></canvas>
+      </div>
+    </div>
+
+    <!-- 3. Radar Diagram & 4. Value Distribution of All 13 Districts -->
+    <div class="stat-section-grid">
+      <div class="stat-card-expanded">
+        <div class="stat-card-header">
+          <h3 style="color:#a855f7;">🕸️ MULTI-PARAMETER RADAR DIAGRAM</h3>
+          <span class="stat-badge-callout" id="radar-district-badge">DISTRICT VS STATE</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted);">
+          Normalized 6-axis morphometric fingerprint comparing the active district against the Uttarakhand State average.
+        </p>
+        <div style="height:270px; display:flex; justify-content:center;">
+          <canvas id="radarDiagramChart"></canvas>
+        </div>
+      </div>
+
+      <div class="stat-card-expanded">
+        <div class="stat-card-header">
+          <h3 style="color:#f59e0b;">🌐 VALUE DISTRIBUTION ACROSS ALL 13 DISTRICTS</h3>
+          <span class="stat-badge-callout">GARHWAL VS KUMAON</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted);">
+          Distribution across all 13 administrative units categorized by division. Touch points to highlight district values.
+        </p>
+        <canvas id="distribution13Chart" height="230"></canvas>
+      </div>
+    </div>
+
+    <!-- Rankings Grid -->
+    <div class="rankings-grid">
+      <div class="ranking-card">
+        <div class="ranking-card-header">
+          <h3 style="font-family:var(--font-mono); font-size:0.85rem; color:#10b981;">▲ TOP PERFORMING DISTRICTS</h3>
+          <button class="tool-btn-small" id="btn-export-top-png">📷 EXPORT PNG</button>
+        </div>
+        <canvas id="topDistrictsChart" height="240"></canvas>
+      </div>
+      <div class="ranking-card">
+        <div class="ranking-card-header">
+          <h3 style="font-family:var(--font-mono); font-size:0.85rem; color:#f43f5e;">▼ ATTENUATED / LOWER VALUE DISTRICTS</h3>
+          <button class="tool-btn-small" id="btn-export-bottom-png">📷 EXPORT PNG</button>
+        </div>
+        <canvas id="bottomDistrictsChart" height="240"></canvas>
+      </div>
+    </div>
+
+    <!-- Heatmap Matrix with High Glow Highlight on Touch Hover -->
+    <div class="heatmap-wrapper">
+      <h3 style="font-family:var(--font-tech-display); font-size:0.95rem; color:#00f0ff; margin-bottom:0.4rem; letter-spacing:1px;">
+        DISTRICT × 6 PARAMETER HEATMAP MATRIX
+      </h3>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.4rem;">
+        Normalized scores (0.00 Min → 1.00 Max). Touch or hover any cell for highlighted neon focus and exact values.
+      </p>
+      <table class="heatmap-table" id="heatmap-table-body"></table>
+    </div>
+
+    <!-- Interactive Ranking Table with Multi-Column Ascending / Descending Sorting -->
+    <div class="table-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h4 style="font-family:var(--font-tech-display); font-size:0.9rem; color:#00f0ff;">
+          📊 INTERACTIVE RANKING & ATTRIBUTE TABLE
+        </h4>
+        <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted);">
+          Click any column header to sort Ascending / Descending (A to Z)
+        </span>
+      </div>
+      <table class="data-table" id="ranking-table">
+        <thead>
+          <tr>
+            <th data-sort="rank">RANK <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="name">DISTRICT (A-Z) <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="division">DIVISION <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="ar">ABS. RELIEF (AR) <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="rr">REL. RELIEF (RR) <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="di">DISSECTION (DI) <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="dd">DRAINAGE (DD) <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="tri">RUGGEDNESS (TRI) <span class="sort-arrow">▼▲</span></th>
+            <th data-sort="twi">WETNESS (TWI) <span class="sort-arrow">▼▲</span></th>
+            <th style="cursor:default;">WEB-GIS</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3D Morphometric Terrain Section -->
+  <section id="viz3d">
+    <div class="section-header">
+      <span class="section-tag">ALWAYS ROTATING 3D MODEL</span>
+      <h2 class="section-title">3D Morphometric Terrain Explorer</h2>
+      <p class="section-subtitle">
+        Real-time extruded morphometric elevation prisms and undulating Himalayan surface. Continuous auto-rotation enabled. Drag to orbit, wheel to zoom.
+      </p>
+    </div>
+
+    <div id="terrain3d-container">
+      <div id="threejs-tooltip">District</div>
+
+      <div class="terrain-overlay-controls">
+        <label class="form-label">EXTRUSION PARAMETER</label>
+        <select id="three-param-select" class="form-select" style="font-size:0.8rem; padding:0.45rem;">
+          <option value="ar">Absolute Relief (AR)</option>
+          <option value="rr">Relative Relief (RR)</option>
+          <option value="di">Dissection Index (DI)</option>
+          <option value="dd">Drainage Density (DD)</option>
+          <option value="tri">Ruggedness Index (TRI)</option>
+          <option value="twi">Wetness Index (TWI)</option>
+        </select>
+        
+        <div style="display:flex; gap:6px; margin-top:4px;">
+          <button class="btn-panel-action" id="btn-3d-rotate" style="flex:1;">⏸ PAUSE</button>
+          <button class="btn-panel-action" id="btn-3d-reset" style="flex:1;">↺ RESET</button>
+        </div>
+      </div>
+
+      <div class="terrain-hud">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+        CONTINUOUS ROTATION ON · DRAG TO ORBIT · HOVER PRISM FOR VALUES
+      </div>
+      <canvas id="terrain3d-canvas"></canvas>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="about">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand" style="margin-bottom:1rem;">
+          <div class="brand-logo-3d">
+            <img 
+              src="https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=120&q=80" 
+              alt="Uttarakhand Logo" 
+              class="uk-top-img"
+            />
+          </div>
+          <div class="brand-text">
+            <h1>UMAP</h1>
+            <span>UTTARAKHAND WEB-GIS</span>
+          </div>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.7;">
+          Uttarakhand Morphometric Analysis System — a centralized academic Web-GIS portal quantifying terrain, drainage networks, and watershed behavior across 13 districts.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>PORTAL NAVIGATION</h4>
+        <ul>
+          <li><a href="#home">Home</a></li>
+          <li><a href="#intro">Introduction</a></li>
+          <li><a href="#applications">Application</a></li>
+          <li><a href="#dashboard">Dashboard</a></li>
+          <li><a href="#analytics">Indices</a></li>
+          <li><a href="#viz3d">3D Terrain</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>PARAMETERS</h4>
+        <ul>
+          <li><a href="#dashboard">Absolute Relief (AR)</a></li>
+          <li><a href="#dashboard">Relative Relief (RR)</a></li>
+          <li><a href="#dashboard">Dissection Index (DI)</a></li>
+          <li><a href="#dashboard">Drainage Density (DD)</a></li>
+          <li><a href="#dashboard">Terrain Ruggedness (TRI)</a></li>
+          <li><a href="#dashboard">Wetness Index (TWI)</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>RESEARCH SPECIFICATIONS</h4>
+        <ul>
+          <li>13 Districts · 6 Parameters</li>
+          <li>78 Published WebGIS Map Layers</li>
+          <li>ALOS PALSAR & SRTM 30m DEM</li>
+          <li>Academic Research Project · 2026</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 UMAS RESEARCH GROUP · BUILT FOR ACADEMIC USE · ALL PARAMETER LAYERS © RESPECTIVE AUTHORS
+    </div>
+  </footer>
+
+  <!-- Application Engine Script -->
+  <script>
+    /* ==========================================================================
+       1. DATASET & 78 GITHUB WEB-GIS LINKS
+       ========================================================================== */
+    const GITHUB_LINKS = {
+      "Uttarkashi": {
+        "rr": "https://srobonahalder-lgtm.github.io/Relative_Relief-Uttarkashi/",
+        "ar": "https://srobonahalder-lgtm.github.io/Absolute_Relief-Uttarkashi/",
+        "di": "https://srobonahalder-lgtm.github.io/Dissection_Index-Uttarkashi/",
+        "dd": "https://srobonahalder-lgtm.github.io/Drainage_Density-Uttarkashi/",
+        "tri": "https://srobonahalder-lgtm.github.io/UTTARKASHI_TRI/",
+        "twi": "https://srobonahalder-lgtm.github.io/UTTARKASHI_TWI/"
+      },
+      "Chamoli": {
+        "rr": "https://srobonahalder-lgtm.github.io/Relative_Relief-Chamoli/",
+        "ar": "https://srobonahalder-lgtm.github.io/Absolute_Relief-Chamoli/",
+        "di": "https://srobonahalder-lgtm.github.io/Dissection_Index-Chamoli/",
+        "dd": "https://srobonahalder-lgtm.github.io/Drainage_Density/",
+        "tri": "https://srobonahalder-lgtm.github.io/CHAMOLI_TRI/",
+        "twi": "https://srobonahalder-lgtm.github.io/CHAMOLI_TWI/"
+      },
+      "Rudraprayag": {
+        "rr": "https://srobonahalder-lgtm.github.io/Relative_Relief-Rudra_Prayag/",
+        "ar": "https://srobonahalder-lgtm.github.io/Absolute_Relief-Rudra_Prayag/",
+        "di": "https://srobonahalder-lgtm.github.io/Dissection_Index-Rudra_Prayag/",
+        "dd": "https://srobonahalder-lgtm.github.io/Drainage_Density-Rudra_Prayag/",
+        "tri": "https://srobonahalder-lgtm.github.io/RUDRA_PRAYAG_TRI/",
+        "twi": "https://srobonahalder-lgtm.github.io/RUDRA_PRAYAG_TWI/"
+      },
+      "Tehri Garhwal": {
+        "rr": "https://taniabiswas1111198-commits.github.io/RELATIVE_RELIEF_TEHRI_GARHWAL/",
+        "ar": "https://taniabiswas1111198-commits.github.io/ABSOLUTE_RELIEF_TEHRI-GARHWAL/",
+        "di": "https://taniabiswas1111198-commits.github.io/DISSECTION-_INDEX_TEHRI_GARHWAL/",
+        "dd": "https://taniabiswas1111198-commits.github.io/DRAINAGE_DENSITY_TEHRI_GARHWAL/",
+        "tri": "https://taniabiswas1111198-commits.github.io/TRI__TEHRI_GARHWAL/",
+        "twi": "https://taniabiswas1111198-commits.github.io/TWI__TEHRI_GARHWAL/"
+      },
+      "Pauri Garhwal": {
+        "rr": "https://taniabiswas1111198-commits.github.io/RELATIVE_RELIEF_PAURI_GARHWAL/",
+        "ar": "https://taniabiswas1111198-commits.github.io/ABSOLUTE_RELIEF_PAURI_GARHWAL/",
+        "di": "https://taniabiswas1111198-commits.github.io/DISSECTION-_INDEX__PAURI_GARHWAL/",
+        "dd": "https://taniabiswas1111198-commits.github.io/DRAINAGE_DENSITY__PAURI_GARHWAL/",
+        "tri": "https://taniabiswas1111198-commits.github.io/TRI__PAURI_GARHWAL/",
+        "twi": "https://taniabiswas1111198-commits.github.io/TWI_PAURI_GARHWAL/"
+      },
+      "Dehradun": {
+        "rr": "https://taniabiswas1111198-commits.github.io/RELATIVE_RELIEF_DEHRADUN/",
+        "ar": "https://taniabiswas1111198-commits.github.io/ABSOLUTE_RELIEF_DEHRADUN/",
+        "di": "https://taniabiswas1111198-commits.github.io/DISSECTION-_INDEX_DEHRADUN_/",
+        "dd": "https://taniabiswas1111198-commits.github.io/DRAINAGE_DENSITY_DEHADUN/",
+        "tri": "https://taniabiswas1111198-commits.github.io/TRI_DEHRADUN/",
+        "twi": "https://taniabiswas1111198-commits.github.io/TWI_DEHRADUN/"
+      },
+      "Pithoragarh": {
+        "rr": "https://soumenpal960-blip.github.io/RELATIVE_RELIEF./#9/30.1331/80.3958",
+        "ar": "https://soumenpal960-blip.github.io/ABSOLUTE-RELIE.F-/#9/30.1356/80.3952",
+        "di": "https://soumenpal960-blip.github.io/DISSECTION-_INDEX-/#9/30.1380/80.4007",
+        "dd": "https://soumenpal960-blip.github.io/DRAINAGE-DENSITY-/#8/30.188/80.502",
+        "tri": "https://soumenpal960-blip.github.io/RUGGEDNESS.-INDEX/#9/30.1404/80.4007",
+        "twi": "https://soumenpal960-blip.github.io/WETNESS-INDEX-./#9/30.1380/80.4007"
+      },
+      "Bageshwar": {
+        "rr": "https://soumenpal960-blip.github.io/RELATIVE._RELIEF/#9/30.0073/79.8349",
+        "ar": "https://soumenpal960-blip.github.io/ABSOLUTE-.RELIEF-/#9/30.0073/79.8349",
+        "di": "https://soumenpal960-blip.github.io/DISSECTION._INDEX/#10/29.9989/79.7978",
+        "dd": "https://soumenpal960-blip.github.io/DRAINAGE._DENSITY/#10/29.9989/79.7978",
+        "tri": "https://soumenpal960-blip.github.io/RUGGEDNESS-.INDEX/#10/29.9989/79.7978",
+        "twi": "https://soumenpal960-blip.github.io/WETNESS.-INDEX-/#10/29.9989/79.7978"
+      },
+      "Almora": {
+        "rr": "https://soumenpal960-blip.github.io/RELATIVE_.RELIEF/#9/29.7095/79.5300",
+        "ar": "https://soumenpal960-blip.github.io/ABSOLUTE.-RELIEF-/#10/29.7084/79.5291",
+        "di": "https://soumenpal960-blip.github.io/DISSECTION-.INDEX/#9/29.8430/79.9640",
+        "dd": "https://soumenpal960-blip.github.io/DRAINAGE_DENSITY/#10/29.7087/79.5289",
+        "tri": "https://soumenpal960-blip.github.io/RUGGEDNESS-I.NDEX-/#9/29.7095/79.5300",
+        "twi": "https://soumenpal960-blip.github.io/WETNESS..-INDEX-/#9/29.7095/79.5300"
+      },
+      "Champawat": {
+        "rr": "https://aktarwasim190-ctrl.github.io/RELATIVE_RELIEF/",
+        "ar": "https://aktarwasim190-ctrl.github.io/ABSOLUTE_-RELIEF/",
+        "di": "https://aktarwasim190-ctrl.github.io/DISSECTION_INDEX/",
+        "dd": "https://aktarwasim190-ctrl.github.io/DRAINAGE_DENSITY/",
+        "tri": "https://aktarwasim190-ctrl.github.io/RUGGEDNESS_INDEX/",
+        "twi": "https://aktarwasim190-ctrl.github.io/WETNESS_INDEX/"
+      },
+      "Nainital": {
+        "rr": "https://aktarwasim190-ctrl.github.io/Relative-Relief/",
+        "ar": "https://aktarwasim190-ctrl.github.io/ABSOLUTE-RELIEF/",
+        "di": "https://aktarwasim190-ctrl.github.io/DISSECTION-INDEX/",
+        "dd": "https://aktarwasim190-ctrl.github.io/DRAINAGE-DENSITY/",
+        "tri": "https://aktarwasim190-ctrl.github.io/RUGGEDNESS-INDEX/",
+        "twi": "https://aktarwasim190-ctrl.github.io/WETNESS-INDEX/"
+      },
+      "Udham Singh Nagar": {
+        "rr": "https://torshabiswas24-ship-it.github.io/RELATIVE-RELIEF_UDHAM-SINGH-NAGAR/",
+        "ar": "https://torshabiswas24-ship-it.github.io/ABSOLUTE-RELIEF_UDHAM-SINGH-NAGAR/",
+        "di": "https://torshabiswas24-ship-it.github.io/DISSECTION-INDEX_UDHAM-SINGH-NAGAR/",
+        "dd": "https://torshabiswas24-ship-it.github.io/DRAINAGE-DENSITY_UDHAM-SINGH-NAGAR/",
+        "tri": "https://torshabiswas24-ship-it.github.io/TOPOGRPHIC-RUGGEDNESS-INDEX_UDHAM-SINGH-NAGAR/",
+        "twi": "https://torshabiswas24-ship-it.github.io/TOPOGRAPHIC-WETNESS-INDEX_UDHAM-SINGH-NAGAR/"
+      },
+      "Haridwar": {
+        "rr": "https://torshabiswas24-ship-it.github.io/RELATIVE-RELIEF_HARIDWAR/",
+        "ar": "https://torshabiswas24-ship-it.github.io/ABSOLUTE-RELIEF_HARIDWAR/",
+        "di": "https://torshabiswas24-ship-it.github.io/DISECTION-INDEX_HARIDWAR/",
+        "dd": "https://torshabiswas24-ship-it.github.io/DRAINAGE-DENSITY_HARIDWAR/",
+        "tri": "https://torshabiswas24-ship-it.github.io/TOPOGRAPHIC-RUGGEDNESSS-INDEX_HARIDWAR/",
+        "twi": "https://torshabiswas24-ship-it.github.io/TOPOGRAPHIC-WEDNESS-INDEX_HARIDWAR/"
+      }
+    };
+
+    const UTTARAKHAND_DATA = [
+      { id: 'chamoli', name: 'Chamoli', division: 'Garhwal', lat: 30.42, lng: 79.55, ar: 3820, rr: 2450, di: 0.64, dd: 2.14, tri: 5.24, twi: 6.8 },
+      { id: 'uttarkashi', name: 'Uttarkashi', division: 'Garhwal', lat: 31.05, lng: 78.45, ar: 3610, rr: 2380, di: 0.61, dd: 2.08, tri: 4.95, twi: 7.1 },
+      { id: 'pithoragarh', name: 'Pithoragarh', division: 'Kumaon', lat: 29.85, lng: 80.35, ar: 3450, rr: 2310, di: 0.63, dd: 2.32, tri: 5.36, twi: 6.9 },
+      { id: 'rudraprayag', name: 'Rudraprayag', division: 'Garhwal', lat: 30.48, lng: 79.05, ar: 2890, rr: 2520, di: 0.67, dd: 2.45, tri: 6.17, twi: 7.4 },
+      { id: 'bageshwar', name: 'Bageshwar', division: 'Kumaon', lat: 29.88, lng: 79.80, ar: 2380, rr: 2120, di: 0.59, dd: 2.28, tri: 4.83, twi: 7.6 },
+      { id: 'tehri_garhwal', name: 'Tehri Garhwal', division: 'Garhwal', lat: 30.38, lng: 78.48, ar: 1840, rr: 1750, di: 0.55, dd: 2.51, tri: 4.39, twi: 8.2 },
+      { id: 'pauri_garhwal', name: 'Pauri Garhwal', division: 'Garhwal', lat: 29.98, lng: 78.78, ar: 1620, rr: 1680, di: 0.52, dd: 2.62, tri: 4.40, twi: 8.5 },
+      { id: 'almora', name: 'Almora', division: 'Kumaon', lat: 29.62, lng: 79.65, ar: 1720, rr: 1590, di: 0.51, dd: 2.48, tri: 3.94, twi: 8.4 },
+      { id: 'champawat', name: 'Champawat', division: 'Kumaon', lat: 29.33, lng: 80.10, ar: 1580, rr: 1510, di: 0.49, dd: 2.58, tri: 3.90, twi: 8.8 },
+      { id: 'nainital', name: 'Nainital', division: 'Kumaon', lat: 29.38, lng: 79.45, ar: 1480, rr: 1420, di: 0.48, dd: 2.39, tri: 3.39, twi: 9.2 },
+      { id: 'dehradun', name: 'Dehradun', division: 'Garhwal', lat: 30.32, lng: 77.98, ar: 980, rr: 1120, di: 0.42, dd: 2.15, tri: 2.41, twi: 10.6 },
+      { id: 'haridwar', name: 'Haridwar', division: 'Garhwal', lat: 29.90, lng: 78.10, ar: 280, rr: 260, di: 0.18, dd: 1.42, tri: 0.37, twi: 14.8 },
+      { id: 'udham_singh_nagar', name: 'Udham Singh Nagar', division: 'Kumaon', lat: 28.98, lng: 79.40, ar: 225, rr: 180, di: 0.14, dd: 1.38, tri: 0.25, twi: 15.6 }
+    ];
+
+    const PARAM_CONFIG = {
+      ar: { label: 'Absolute Relief (AR)', short: 'AR', unit: 'm', desc: 'Maximum elevation of the watershed above mean sea level. High AR marks structurally elevated terrain with strong potential energy for erosion.' },
+      rr: { label: 'Relative Relief (RR)', short: 'RR', unit: 'm/km²', desc: 'Difference between highest and lowest elevation in a unit area. Dictates gravitational potential and mass wasting propensity.' },
+      di: { label: 'Dissection Index (DI)', short: 'DI', unit: 'DI', desc: 'Ratio of relative relief to absolute relief. Quantifies the stage of landscape evolution and canyon incision intensity.' },
+      dd: { label: 'Drainage Density (DD)', short: 'DD', unit: 'km/km²', desc: 'Total stream length per unit area. Higher values indicate impervious substrate, sparse vegetation, and rapid runoff peaks.' },
+      tri: { label: 'Topographic Ruggedness Index (TRI)', short: 'TRI', unit: 'TRI', desc: 'Measurement of topographic heterogeneity. Indicates structural complexity, cliff faces, and high shear stress zones.' },
+      twi: { label: 'Topographic Wetness Index (TWI)', short: 'TWI', unit: 'TWI', desc: 'Quantifies topographic control on hydrological processes and water accumulation in shallow subsurface zones.' }
+    };
+
+    let activeGeoJsonData = null;
+    let currentDistrict = 'Chamoli';
+    let currentParam = 'ar';
+    let map, districtGeoJsonLayer, baseTileLayer;
+    let districtMarkersGroup = L.layerGroup();
+    let showLabels = false;
+
+    // Measurement Tool state
+    let isMeasuring = false;
+    let measurePoints = [];
+    let measureLine = null;
+    let measureMarkers = [];
+
+    // Sorting state for Ranking Table
+    let tableSortCol = 'rank';
+    let tableSortAsc = true;
+
+    /* Base Layer Tile URLs */
+    const BASEMAP_URLS = {
+      cartoDark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      googleSat: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      googleHybrid: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      esriSat: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      cartoLight: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    };
+
+    /* ==========================================================================
+       2. LEAFLET MAP & BASEMAP SELECTOR & 13 DISTRICT POINTS
+       ========================================================================== */
+    function initMap() {
+      map = L.map('map-view', {
+        center: [30.15, 79.25],
+        zoom: 7.8,
+        zoomControl: true,
+        attributionControl: false
+      });
+
+      // Default to Carto Dark Matter
+      baseTileLayer = L.tileLayer(BASEMAP_URLS.cartoDark, {
+        maxZoom: 19,
+        subdomains: 'abcd',
+        attribution: '© CartoDB, OpenStreetMap'
+      }).addTo(map);
+
+      districtMarkersGroup.addTo(map);
+
+      initMapDropdownToggle();
+      renderDistrictPoints();
+      loadExactUttarakhandGeoJSON();
+      initMapTools();
+    }
+
+    function initMapDropdownToggle() {
+      const toggleBtn = document.getElementById('basemap-toggle-btn');
+      const selectorBox = document.getElementById('basemap-overlay-selector');
+
+      toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = selectorBox.classList.contains('visible');
+        if (isOpen) {
+          selectorBox.classList.remove('visible');
+          toggleBtn.classList.remove('open');
+        } else {
+          selectorBox.classList.add('visible');
+          toggleBtn.classList.add('open');
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!selectorBox.contains(e.target) && !toggleBtn.contains(e.target)) {
+          selectorBox.classList.remove('visible');
+          toggleBtn.classList.remove('open');
+        }
+      });
+    }
+
+    /* 13 District Points on OSM Map with click popup and interaction */
+    function renderDistrictPoints() {
+      districtMarkersGroup.clearLayers();
+
+      UTTARAKHAND_DATA.forEach(d => {
+        // Pulse custom DivIcon
+        const pulseIcon = L.divIcon({
+          className: 'custom-pulse-marker',
+          html: `<div class="district-marker-pulse" id="marker-point-${d.id}" title="${d.name}"></div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+
+        const marker = L.marker([d.lat, d.lng], { icon: pulseIcon }).addTo(districtMarkersGroup);
+
+        // Tooltip district name
+        marker.bindTooltip(`<b>📍 ${d.name.toUpperCase()}</b>`, {
+          permanent: showLabels,
+          direction: 'top',
+          className: showLabels ? 'district-map-permanent-label' : 'district-map-tooltip',
+          offset: [0, -6]
+        });
+
+        const mapUrl = GITHUB_LINKS[d.name]?.[currentParam] || '#';
+        const popupHtml = `
+          <div style="font-family:var(--font-tech-display); font-size:1.05rem; font-weight:900; color:#00f0ff; margin-bottom:4px;">
+            📍 ${d.name} District
+          </div>
+          <div style="font-family:var(--font-mono); font-size:0.75rem; color:#cbd5e1; line-height:1.6; margin-bottom:8px;">
+            Division: <b>${d.division}</b><br>
+            ${PARAM_CONFIG[currentParam].label}: <b style="color:#fff;">${d[currentParam]} ${PARAM_CONFIG[currentParam].unit}</b><br>
+            Absolute Relief: <b>${d.ar} m</b> | Wetness: <b>${d.twi}</b><br>
+            Coordinates: <b>${d.lat}°N, ${d.lng}°E</b>
+          </div>
+          <a href="${mapUrl}" target="_blank" rel="noopener" style="background:linear-gradient(135deg, #00f0ff 0%, #0284c7 100%); color:#040811; padding:5px 12px; border-radius:6px; font-family:var(--font-mono); font-size:0.72rem; text-decoration:none; font-weight:800; display:inline-block; box-shadow:0 0 10px rgba(0,240,255,0.4);">OPEN LIVE WEB-GIS ↗</a>
+        `;
+        marker.bindPopup(popupHtml);
+
+        marker.on('click', () => {
+          selectDistrict(d.name);
+          const hud = document.getElementById('map-hud-info');
+          hud.innerHTML = `<span>📍</span> <b>${d.name.toUpperCase()}</b> · ${PARAM_CONFIG[currentParam].short}: <b style="color:#00f0ff">${d[currentParam]} ${PARAM_CONFIG[currentParam].unit}</b> (${d.division})`;
+        });
+      });
+    }
+
+    function normalizeDistrictName(rawName) {
+      if (!rawName) return '';
+      const clean = rawName.toString().trim().toLowerCase().replace(/[^a-z]/g, '');
+      if (clean.includes('chamoli')) return 'Chamoli';
+      if (clean.includes('uttarkashi')) return 'Uttarkashi';
+      if (clean.includes('rudra')) return 'Rudraprayag';
+      if (clean.includes('tehri')) return 'Tehri Garhwal';
+      if (clean.includes('pauri') || clean.includes('garhwal')) return 'Pauri Garhwal';
+      if (clean.includes('dehradun') || clean.includes('dehra')) return 'Dehradun';
+      if (clean.includes('pithora')) return 'Pithoragarh';
+      if (clean.includes('bagesh')) return 'Bageshwar';
+      if (clean.includes('almora')) return 'Almora';
+      if (clean.includes('champa')) return 'Champawat';
+      if (clean.includes('naini')) return 'Nainital';
+      if (clean.includes('haridwar') || clean.includes('hardwar')) return 'Haridwar';
+      if (clean.includes('udham') || clean.includes('udhamsingh')) return 'Udham Singh Nagar';
+      return rawName;
+    }
+
+    async function loadExactUttarakhandGeoJSON() {
+      const endpoints = [
+        'https://raw.githubusercontent.com/Subhash9325/GeoJson-Data-of-Indian-States/master/Uttarakhand_Districts.geojson',
+        'https://raw.githubusercontent.com/geohacker/india/master/district/uttarakhand.geojson',
+        'https://raw.githubusercontent.com/datameet/maps/master/Districts/Census_2011/2011_Dist.json'
+      ];
+
+      for (let url of endpoints) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.features) {
+              let ukFeatures = data.features;
+              if (url.includes('2011_Dist')) {
+                ukFeatures = data.features.filter(f => {
+                  const st = f.properties.ST_NM || f.properties.state_name || f.properties.STATE;
+                  return st && st.toLowerCase().includes('uttarakhand');
+                });
+              }
+
+              ukFeatures.forEach(f => {
+                const rawName = f.properties.district || f.properties.DISTRICT || f.properties.name || f.properties.dtname || f.properties.NAME_2 || '';
+                f.properties.name = normalizeDistrictName(rawName);
+              });
+
+              activeGeoJsonData = { type: 'FeatureCollection', features: ukFeatures };
+              renderDistrictPolygons();
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Endpoint fallback:', e);
+        }
+      }
+      renderDistrictPolygons();
+    }
+
+    function renderDistrictPolygons() {
+      if (!activeGeoJsonData) return;
+
+      if (districtGeoJsonLayer) {
+        map.removeLayer(districtGeoJsonLayer);
+      }
+
+      const opacity = parseFloat(document.getElementById('layer-opacity-slider').value) / 100;
+      const hud = document.getElementById('map-hud-info');
+
+      districtGeoJsonLayer = L.geoJSON(activeGeoJsonData, {
+        style: (feature) => {
+          const distName = feature.properties.name;
+          const isSelected = (distName === currentDistrict);
+          return {
+            fillColor: isSelected ? '#00f0ff' : '#0284c7',
+            weight: isSelected ? 3.0 : 1.6,
+            opacity: opacity,
+            color: isSelected ? '#ffffff' : '#38bdf8',
+            fillOpacity: isSelected ? (opacity * 0.45) : (opacity * 0.22),
+            dashArray: null
+          };
+        },
+        onEachFeature: (feature, layer) => {
+          const name = feature.properties.name;
+          const d = UTTARAKHAND_DATA.find(x => x.name === name);
+
+          layer.on('mouseover', (e) => {
+            const currentLayer = e.target;
+            currentLayer.setStyle({
+              weight: 3.5,
+              color: '#00f0ff',
+              fillColor: '#00f0ff',
+              fillOpacity: 0.55
+            });
+            currentLayer.bringToFront();
+            if (d) {
+              hud.innerHTML = `<span>📍</span> <b>${name.toUpperCase()}</b> · ${PARAM_CONFIG[currentParam].short}: <b style="color:#00f0ff">${d[currentParam]} ${PARAM_CONFIG[currentParam].unit}</b> (${d.division})`;
+            }
+          });
+
+          layer.on('mouseout', (e) => {
+            districtGeoJsonLayer.resetStyle(e.target);
+            const activeD = UTTARAKHAND_DATA.find(x => x.name === currentDistrict);
+            if (activeD) {
+              hud.innerHTML = `<span>📍</span> SELECTED: <b>${currentDistrict.toUpperCase()}</b> · ${PARAM_CONFIG[currentParam].short}: <b style="color:#00f0ff">${activeD[currentParam]} ${PARAM_CONFIG[currentParam].unit}</b>`;
+            }
+          });
+
+          layer.on('click', () => {
+            selectDistrict(name);
+          });
+        }
+      }).addTo(map);
+
+      try {
+        map.fitBounds(districtGeoJsonLayer.getBounds(), { padding: [20, 20] });
+      } catch (err) {}
+    }
+
+    /* ==========================================================================
+       3. MAP TOOLS (MEASURE, LABELS, BOOKMARK, FULLSCREEN)
+       ========================================================================== */
+    function initMapTools() {
+      // 1. Measure Tool
+      const toggleMeasure = () => {
+        isMeasuring = !isMeasuring;
+        const btn1 = document.getElementById('tool-measure');
+        const btn2 = document.getElementById('map-tool-measure');
+        const hud = document.getElementById('measure-hud');
+
+        if (isMeasuring) {
+          btn1.classList.add('active-tool');
+          btn2.classList.add('active-tool');
+          map.getContainer().style.cursor = 'crosshair';
+          hud.style.display = 'block';
+          measurePoints = [];
+          if (measureLine) map.removeLayer(measureLine);
+          measureMarkers.forEach(m => map.removeLayer(m));
+          measureMarkers = [];
+        } else {
+          btn1.classList.remove('active-tool');
+          btn2.classList.remove('active-tool');
+          map.getContainer().style.cursor = '';
+          hud.style.display = 'none';
+          if (measureLine) map.removeLayer(measureLine);
+          measureMarkers.forEach(m => map.removeLayer(m));
+          measureMarkers = [];
+        }
+      };
+
+      document.getElementById('tool-measure').addEventListener('click', toggleMeasure);
+      document.getElementById('map-tool-measure').addEventListener('click', toggleMeasure);
+
+      map.on('click', (e) => {
+        if (!isMeasuring) return;
+        measurePoints.push(e.latlng);
+
+        const pointMarker = L.circleMarker(e.latlng, {
+          radius: 5,
+          color: '#10b981',
+          fillColor: '#ffffff',
+          fillOpacity: 1
+        }).addTo(map);
+        measureMarkers.push(pointMarker);
+
+        if (measurePoints.length > 1) {
+          if (measureLine) map.removeLayer(measureLine);
+          measureLine = L.polyline(measurePoints, {
+            color: '#10b981',
+            weight: 3,
+            dashArray: '6, 6'
+          }).addTo(map);
+
+          let totalDist = 0;
+          for (let i = 0; i < measurePoints.length - 1; i++) {
+            totalDist += measurePoints[i].distanceTo(measurePoints[i+1]);
+          }
+          const km = (totalDist / 1000).toFixed(2);
+          document.getElementById('measure-distance-val').innerText = `${km} km`;
+        }
+      });
+
+      // 2. Labels Tool
+      const toggleLabels = () => {
+        showLabels = !showLabels;
+        const btn1 = document.getElementById('tool-labels');
+        const btn2 = document.getElementById('map-tool-labels');
+        if (showLabels) {
+          btn1.classList.add('active-tool');
+          btn2.classList.add('active-tool');
+        } else {
+          btn1.classList.remove('active-tool');
+          btn2.classList.remove('active-tool');
+        }
+        renderDistrictPoints();
+      };
+      document.getElementById('tool-labels').addEventListener('click', toggleLabels);
+      document.getElementById('map-tool-labels').addEventListener('click', toggleLabels);
+
+      // 3. Bookmark Tool (Cycles through landmark views)
+      const bookmarks = [
+        { name: 'Uttarakhand Full Extent', center: [30.15, 79.25], zoom: 7.8 },
+        { name: 'Garhwal Higher Himalayas (Chamoli/Uttarkashi)', center: [30.7, 79.0], zoom: 9.0 },
+        { name: 'Kumaon Lake & Basin Region (Nainital/Almora)', center: [29.6, 79.7], zoom: 9.2 },
+        { name: 'Tarai & Foothills (Haridwar/US Nagar)', center: [29.4, 78.8], zoom: 8.8 }
+      ];
+      let bmIndex = 0;
+      const triggerBookmark = () => {
+        bmIndex = (bmIndex + 1) % bookmarks.length;
+        const bm = bookmarks[bmIndex];
+        map.flyTo(bm.center, bm.zoom, { duration: 1.2 });
+        const hud = document.getElementById('map-hud-info');
+        hud.innerHTML = `<span>🔖</span> BOOKMARK VIEW: <b>${bm.name.toUpperCase()}</b>`;
+      };
+      document.getElementById('tool-bookmark').addEventListener('click', triggerBookmark);
+      document.getElementById('map-tool-bookmark').addEventListener('click', triggerBookmark);
+
+      // 4. Fullscreen Tool
+      const toggleFullscreen = () => {
+        const frame = document.getElementById('map-frame-container');
+        if (!document.fullscreenElement) {
+          if (frame.requestFullscreen) frame.requestFullscreen();
+          else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+        }
+      };
+      document.getElementById('tool-fullscreen').addEventListener('click', toggleFullscreen);
+      document.getElementById('map-tool-full').addEventListener('click', toggleFullscreen);
+
+      document.addEventListener('fullscreenchange', () => {
+        setTimeout(() => map.invalidateSize(), 200);
+      });
+    }
+
+    /* ==========================================================================
+       4. DISTRICT DIRECTORY & CARDS RENDERER
+       ========================================================================== */
+    function renderDistrictCards(filterText = '') {
+      const container = document.getElementById('district-cards-container');
+      container.innerHTML = '';
+
+      const filtered = UTTARAKHAND_DATA.filter(d => 
+        d.name.toLowerCase().includes(filterText.toLowerCase()) ||
+        d.division.toLowerCase().includes(filterText.toLowerCase())
+      );
+
+      filtered.forEach(d => {
+        const isSelected = (d.name === currentDistrict);
+        const card = document.createElement('div');
+        card.className = `district-item-card ${isSelected ? 'selected' : ''}`;
+        card.id = `card-${d.id}`;
+
+        const links = GITHUB_LINKS[d.name] || {};
+
+        card.innerHTML = `
+          <div class="district-card-header">
+            <div class="district-title-wrap">
+              <h4>📍 ${d.name}</h4>
+              <span>UTTARAKHAND · 6 MORPHOMETRIC PROJECTS</span>
+            </div>
+            <button class="btn-locate-target" title="Locate & Focus District" onclick="selectDistrict('${d.name}')">🎯</button>
+          </div>
+          <div class="param-pill-row">
+            <a href="${links.rr || '#'}" target="_blank" rel="noopener" class="param-pill ${currentParam==='rr'?'active':''}">Relative Relief</a>
+            <a href="${links.ar || '#'}" target="_blank" rel="noopener" class="param-pill ${currentParam==='ar'?'active':''}">Absolute Relief</a>
+            <a href="${links.di || '#'}" target="_blank" rel="noopener" class="param-pill ${currentParam==='di'?'active':''}">Dissection Index</a>
+            <a href="${links.dd || '#'}" target="_blank" rel="noopener" class="param-pill ${currentParam==='dd'?'active':''}">Drainage Density</a>
+            <a href="${links.tri || '#'}" target="_blank" rel="noopener" class="param-pill ${currentParam==='tri'?'active':''}">Ruggedness Index</a>
+            <a href="${links.twi || '#'}" target="_blank" rel="noopener" class="param-pill ${currentParam==='twi'?'active':''}">Wetness Index</a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function selectDistrict(districtName) {
+      currentDistrict = districtName;
+      document.getElementById('district-select').value = districtName;
+      const d = UTTARAKHAND_DATA.find(x => x.name === districtName);
+      if (d && map) {
+        map.flyTo([d.lat, d.lng], 9.2, { duration: 1.2 });
+      }
+      renderDistrictCards(document.getElementById('district-search-input').value);
+      renderDistrictPolygons();
+      updateAllStatisticalCharts();
+    }
+
+    /* ==========================================================================
+       5. STATISTICAL ANALYSIS SUITE (MEAN, MEDIAN, MIN, MAX, RANGE, STD, CV)
+       ========================================================================== */
+    let topChart, bottomChart;
+    let stateVsDistChart, freqHistChart, radarChart, dist13Chart;
+
+    function compute13DistrictsStatistics(p) {
+      const vals = UTTARAKHAND_DATA.map(d => d[p]).sort((a, b) => a - b);
+      const n = vals.length;
+      const min = vals[0];
+      const max = vals[n - 1];
+      const range = max - min;
+      const sum = vals.reduce((acc, v) => acc + v, 0);
+      const mean = sum / n;
+      
+      // Median (Middle element of sorted 13 values is index 6)
+      const median = vals[Math.floor(n / 2)];
+
+      // Standard Deviation
+      const variance = vals.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / n;
+      const std = Math.sqrt(variance);
+
+      // Coefficient of Variation
+      const cv = (std / mean) * 100;
+
+      return { mean, median, min, max, range, std, cv, unit: PARAM_CONFIG[p].unit };
+    }
+
+    function updateStatisticalDashboardCards(p) {
+      const stats = compute13DistrictsStatistics(p);
+
+      const isDecimal = stats.mean < 10;
+      const fmt = (v) => isDecimal ? v.toFixed(2) : Math.round(v).toLocaleString();
+
+      document.getElementById('stat-mean').innerText = fmt(stats.mean);
+      document.getElementById('stat-median').innerText = fmt(stats.median);
+      document.getElementById('stat-min').innerText = fmt(stats.min);
+      document.getElementById('stat-max').innerText = fmt(stats.max);
+      document.getElementById('stat-range').innerText = fmt(stats.range);
+      document.getElementById('stat-std').innerText = stats.std.toFixed(2);
+      document.getElementById('stat-cv').innerText = `${stats.cv.toFixed(2)}%`;
+
+      ['mean', 'median', 'min', 'max', 'range', 'std'].forEach(id => {
+        document.getElementById(`stat-unit-${id}`).innerText = stats.unit;
+      });
+    }
+
+    function initAnalyticsCharts() {
+      // 1. Top Performing Districts Bar
+      const ctxTop = document.getElementById('topDistrictsChart').getContext('2d');
+      topChart = new Chart(ctxTop, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: '#10b981', borderRadius: 4 }] },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+            y: { ticks: { color: '#cbd5e1', font: { family: 'Plus Jakarta Sans', size: 10 } } }
+          }
+        }
+      });
+
+      // 2. Bottom Performing Districts Bar
+      const ctxBottom = document.getElementById('bottomDistrictsChart').getContext('2d');
+      bottomChart = new Chart(ctxBottom, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: '#f43f5e', borderRadius: 4 }] },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+            y: { ticks: { color: '#cbd5e1', font: { family: 'Plus Jakarta Sans', size: 10 } } }
+          }
+        }
+      });
+
+      // 3. State Mean vs District Bar Chart (with touch/hover popups)
+      const ctxStateDist = document.getElementById('stateVsDistrictChart').getContext('2d');
+      stateVsDistChart = new Chart(ctxStateDist, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'District Value',
+              data: [],
+              backgroundColor: 'rgba(0, 240, 255, 0.85)',
+              borderColor: '#00f0ff',
+              borderWidth: 1.5,
+              borderRadius: 4
+            },
+            {
+              label: 'State Benchmark Mean',
+              data: [],
+              type: 'line',
+              borderColor: '#f59e0b',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointBackgroundColor: '#f59e0b',
+              pointRadius: 3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { family: 'JetBrains Mono', size: 10 } } },
+            tooltip: {
+              callbacks: {
+                afterBody: (context) => {
+                  const distVal = context[0].parsed.y;
+                  const stateVal = context[1] ? context[1].parsed.y : 0;
+                  const diff = distVal - stateVal;
+                  const sign = diff >= 0 ? '+' : '';
+                  return `State Benchmark Delta: ${sign}${diff.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+          }
+        }
+      });
+
+      // 4. Watershed Frequency Histogram
+      const ctxHist = document.getElementById('frequencyHistogramChart').getContext('2d');
+      freqHistChart = new Chart(ctxHist, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'District Watershed Count',
+            data: [],
+            backgroundColor: 'rgba(45, 212, 191, 0.75)',
+            borderColor: '#2dd4bf',
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `Districts in Range: ${ctx.raw} (Watershed Class Frequency)`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.06)' } }
+          }
+        }
+      });
+
+      // 5. Multi-Parameter Radar Diagram
+      const ctxRadar = document.getElementById('radarDiagramChart').getContext('2d');
+      radarChart = new Chart(ctxRadar, {
+        type: 'radar',
+        data: {
+          labels: ['AR (Abs)', 'RR (Rel)', 'DI (Diss)', 'DD (Drain)', 'TRI (Rugg)', 'TWI (Wet)'],
+          datasets: [
+            {
+              label: 'Active District',
+              data: [],
+              borderColor: '#00f0ff',
+              backgroundColor: 'rgba(0, 240, 255, 0.35)',
+              pointBackgroundColor: '#ffffff',
+              borderWidth: 2
+            },
+            {
+              label: 'Uttarakhand State Average',
+              data: [],
+              borderColor: '#a855f7',
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              pointBackgroundColor: '#a855f7',
+              borderWidth: 1.5,
+              borderDash: [4, 4]
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { family: 'JetBrains Mono', size: 10 } } }
+          },
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+              grid: { color: 'rgba(255, 255, 255, 0.08)' },
+              pointLabels: { color: '#00f0ff', font: { family: 'JetBrains Mono', size: 9 } },
+              ticks: { display: false, min: 0, max: 100 }
+            }
+          }
+        }
+      });
+
+      // 6. Value Distribution Across All 13 Districts (Garhwal vs Kumaon)
+      const ctxDist = document.getElementById('distribution13Chart').getContext('2d');
+      dist13Chart = new Chart(ctxDist, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Garhwal Division',
+              data: [],
+              backgroundColor: 'rgba(56, 189, 248, 0.85)',
+              borderRadius: 4
+            },
+            {
+              label: 'Kumaon Division',
+              data: [],
+              backgroundColor: 'rgba(245, 158, 11, 0.85)',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { family: 'JetBrains Mono', size: 10 } } }
+          },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 9 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+          }
+        }
+      });
+    }
+
+    function updateAllStatisticalCharts() {
+      const p = document.getElementById('analytics-param-select').value;
+      const sorted = [...UTTARAKHAND_DATA].sort((a, b) => b[p] - a[p]);
+      const activeObj = UTTARAKHAND_DATA.find(x => x.name === currentDistrict) || sorted[0];
+
+      // Update 7-Card Statistical Dashboard
+      updateStatisticalDashboardCards(p);
+
+      // Top & Bottom Charts
+      topChart.data.labels = sorted.slice(0, 6).map(d => d.name);
+      topChart.data.datasets[0].data = sorted.slice(0, 6).map(d => d[p]);
+      topChart.update();
+
+      const bottomData = [...sorted].reverse().slice(0, 6);
+      bottomChart.data.labels = bottomData.map(d => d.name);
+      bottomChart.data.datasets[0].data = bottomData.map(d => d[p]);
+      bottomChart.update();
+
+      // State Mean vs District Values
+      const sum = UTTARAKHAND_DATA.reduce((acc, d) => acc + d[p], 0);
+      const stateMean = sum / UTTARAKHAND_DATA.length;
+      document.getElementById('state-mean-badge').innerText = `STATE MEAN: ${stateMean.toFixed(2)} ${PARAM_CONFIG[p].unit}`;
+
+      stateVsDistChart.data.labels = UTTARAKHAND_DATA.map(d => d.name);
+      stateVsDistChart.data.datasets[0].data = UTTARAKHAND_DATA.map(d => d[p]);
+      stateVsDistChart.data.datasets[0].backgroundColor = UTTARAKHAND_DATA.map(d => d.name === currentDistrict ? '#00f0ff' : 'rgba(56, 189, 248, 0.4)');
+      stateVsDistChart.data.datasets[1].data = UTTARAKHAND_DATA.map(() => stateMean);
+      stateVsDistChart.update();
+
+      // Histogram Frequency Bins
+      const values = UTTARAKHAND_DATA.map(d => d[p]);
+      const minV = Math.min(...values);
+      const maxV = Math.max(...values);
+      const binCount = 5;
+      const step = (maxV - minV) / binCount || 1;
+      const bins = Array(binCount).fill(0);
+      const binLabels = [];
+
+      for (let i = 0; i < binCount; i++) {
+        const start = minV + i * step;
+        const end = start + step;
+        binLabels.push(`${start.toFixed(1)} - ${end.toFixed(1)}`);
+      }
+
+      values.forEach(v => {
+        let idx = Math.floor((v - minV) / step);
+        if (idx >= binCount) idx = binCount - 1;
+        bins[idx]++;
+      });
+
+      freqHistChart.data.labels = binLabels;
+      freqHistChart.data.datasets[0].data = bins;
+      freqHistChart.update();
+
+      // Radar Diagram Normalized comparison (District vs State)
+      document.getElementById('radar-district-badge').innerText = `${activeObj.name.toUpperCase()} VS STATE`;
+      const radarParams = ['ar', 'rr', 'di', 'dd', 'tri', 'twi'];
+      const distNorms = [];
+      const stateNorms = [];
+
+      radarParams.forEach(rp => {
+        const rVals = UTTARAKHAND_DATA.map(d => d[rp]);
+        const rMin = Math.min(...rVals);
+        const rMax = Math.max(...rVals);
+        const rMean = rVals.reduce((a, b) => a + b, 0) / rVals.length;
+
+        const dNorm = ((activeObj[rp] - rMin) / (rMax - rMin || 1)) * 100;
+        const sNorm = ((rMean - rMin) / (rMax - rMin || 1)) * 100;
+
+        distNorms.push(Math.round(dNorm));
+        stateNorms.push(Math.round(sNorm));
+      });
+
+      radarChart.data.datasets[0].label = activeObj.name;
+      radarChart.data.datasets[0].data = distNorms;
+      radarChart.data.datasets[1].data = stateNorms;
+      radarChart.update();
+
+      // 13-Districts Value Distribution (Garhwal vs Kumaon)
+      dist13Chart.data.labels = UTTARAKHAND_DATA.map(d => d.name);
+      dist13Chart.data.datasets[0].data = UTTARAKHAND_DATA.map(d => d.division === 'Garhwal' ? d[p] : null);
+      dist13Chart.data.datasets[1].data = UTTARAKHAND_DATA.map(d => d.division === 'Kumaon' ? d[p] : null);
+      dist13Chart.update();
+
+      renderSortedTable();
+    }
+
+    function renderHeatmap() {
+      const table = document.getElementById('heatmap-table-body');
+      const params = ['ar', 'rr', 'di', 'dd', 'tri', 'twi'];
+      const minMax = {};
+      params.forEach(p => {
+        const vals = UTTARAKHAND_DATA.map(d => d[p]);
+        minMax[p] = { min: Math.min(...vals), max: Math.max(...vals) };
+      });
+
+      let html = `
+        <thead>
+          <tr>
+            <th style="text-align:left;">DISTRICT</th>
+            ${params.map(p => `<th>${PARAM_CONFIG[p].short}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+      `;
+
+      UTTARAKHAND_DATA.forEach(d => {
+        html += `<tr><td style="text-align:left; font-weight:700; color:#fff;">${d.name}</td>`;
+        params.forEach(p => {
+          const val = d[p];
+          const norm = (val - minMax[p].min) / (minMax[p].max - minMax[p].min || 1);
+          const bgAlpha = (0.2 + norm * 0.75).toFixed(2);
+          html += `
+            <td class="heatmap-cell" 
+                data-district="${d.name}" 
+                data-param="${PARAM_CONFIG[p].label}" 
+                data-val="${val} ${PARAM_CONFIG[p].unit}" 
+                data-norm="${Math.round(norm * 100)}"
+                style="background: rgba(0, 240, 255, ${bgAlpha});">
+              ${val}
+            </td>
+          `;
+        });
+        html += `</tr>`;
+      });
+      html += `</tbody>`;
+      table.innerHTML = html;
+
+      const hud = document.getElementById('heatmap-float-hud');
+      document.querySelectorAll('.heatmap-cell').forEach(cell => {
+        const showHUD = (e) => {
+          const dist = cell.getAttribute('data-district');
+          const param = cell.getAttribute('data-param');
+          const val = cell.getAttribute('data-val');
+          const norm = cell.getAttribute('data-norm');
+          
+          hud.style.display = 'block';
+          hud.innerHTML = `
+            <div style="font-weight:800; color:#00f0ff; margin-bottom:2px;">📍 ${dist}</div>
+            <div style="color:#cbd5e1;">${param}: <b style="color:#fff;">${val}</b></div>
+            <div style="font-size:0.68rem; color:#94a3b8; margin-top:2px;">Percentile Intensity: <b>${norm}%</b></div>
+          `;
+          const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+          const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+          hud.style.left = `${clientX}px`;
+          hud.style.top = `${clientY}px`;
+        };
+
+        cell.addEventListener('mousemove', showHUD);
+        cell.addEventListener('touchstart', showHUD);
+        cell.addEventListener('mouseleave', () => { hud.style.display = 'none'; });
+        cell.addEventListener('touchend', () => { hud.style.display = 'none'; });
+      });
+    }
+
+    /* ==========================================================================
+       6. INTERACTIVE RANKING TABLE (ASCENDING / DESCENDING / A TO Z SORTING)
+       ========================================================================== */
+    function renderSortedTable() {
+      const tBody = document.getElementById('table-body');
+      tBody.innerHTML = '';
+
+      const currentEvalParam = document.getElementById('analytics-param-select').value;
+      const sortedByActiveParam = [...UTTARAKHAND_DATA].sort((a, b) => b[currentEvalParam] - a[currentEvalParam]);
+      
+      const rankedData = sortedByActiveParam.map((d, index) => ({
+        ...d,
+        rank: index + 1
+      }));
+
+      rankedData.sort((a, b) => {
+        let valA = a[tableSortCol];
+        let valB = b[tableSortCol];
+
+        if (typeof valA === 'string') {
+          return tableSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        } else {
+          return tableSortAsc ? valA - valB : valB - valA;
+        }
+      });
+
+      rankedData.forEach((d) => {
+        const link = GITHUB_LINKS[d.name]?.[currentParam] || '#';
+        const isSelected = (d.name === currentDistrict);
+        const tr = document.createElement('tr');
+        if (isSelected) tr.style.backgroundColor = 'rgba(0, 240, 255, 0.15)';
+
+        tr.innerHTML = `
+          <td style="font-family:var(--font-mono); color:#00f0ff; font-weight:800;">#${d.rank}</td>
+          <td><strong>${d.name}</strong></td>
+          <td>${d.division}</td>
+          <td>${d.ar} m</td>
+          <td>${d.rr} m/km²</td>
+          <td>${d.di}</td>
+          <td>${d.dd}</td>
+          <td>${d.tri}</td>
+          <td>${d.twi}</td>
+          <td><a href="${link}" target="_blank" rel="noopener" style="color:#00f0ff; font-family:var(--font-mono); font-size:0.75rem; text-decoration:none; font-weight:700;">VIEW ↗</a></td>
+        `;
+        tBody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.data-table th[data-sort]').forEach(th => {
+        const col = th.getAttribute('data-sort');
+        const arrow = th.querySelector('.sort-arrow');
+        if (col === tableSortCol) {
+          th.classList.add('active-sort');
+          arrow.innerHTML = tableSortAsc ? '▲' : '▼';
+        } else {
+          th.classList.remove('active-sort');
+          arrow.innerHTML = '▼▲';
+        }
+      });
+    }
+
+    function initTableSorting() {
+      document.querySelectorAll('.data-table th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.getAttribute('data-sort');
+          if (tableSortCol === col) {
+            tableSortAsc = !tableSortAsc;
+          } else {
+            tableSortCol = col;
+            tableSortAsc = (col === 'name' || col === 'division' || col === 'rank') ? true : false;
+          }
+          renderSortedTable();
+        });
+      });
+    }
+
+    /* ==========================================================================
+       7. 3D TERRAIN ENGINES (HERO BANNER CANVAS + MAIN 3D EXPLORER)
+       ========================================================================== */
+    function initHeroBanner3D() {
+      const canvas = document.getElementById('hero-terrain-canvas');
+      if (!canvas) return;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+      camera.position.set(0, 14, 26);
+      camera.lookAt(0, 0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+      const geo = new THREE.PlaneGeometry(38, 24, 40, 30);
+      geo.rotateX(-Math.PI / 2);
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        pos.setY(i, Math.sin(x * 0.3) * Math.cos(z * 0.3) * 2.2 + Math.sin(x * 0.8) * 0.6);
+      }
+      geo.computeVertexNormals();
+
+      const mat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.45 });
+      const mesh = new THREE.Mesh(geo, mat);
+      scene.add(mesh);
+
+      function animHero() {
+        requestAnimationFrame(animHero);
+        mesh.rotation.y += 0.002;
+        renderer.render(scene, camera);
+      }
+      animHero();
+
+      window.addEventListener('resize', () => {
+        if (!canvas.clientWidth || !canvas.clientHeight) return;
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+      });
+    }
+
+    let scene3D, camera3D, renderer3D, controls3D, prismGroup;
+    let isRotating3D = true;
+    let threeSelectedParam = 'ar';
+    let raycaster3D, mouse3D;
+
+    function initMain3D() {
+      const container = document.getElementById('terrain3d-container');
+      const canvas = document.getElementById('terrain3d-canvas');
+
+      scene3D = new THREE.Scene();
+      scene3D.background = new THREE.Color(0x040811);
+      scene3D.fog = new THREE.FogExp2(0x040811, 0.015);
+
+      camera3D = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera3D.position.set(0, 34, 48);
+
+      renderer3D = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      renderer3D.setSize(container.clientWidth, container.clientHeight);
+      renderer3D.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      controls3D = new THREE.OrbitControls(camera3D, renderer3D.domElement);
+      controls3D.enableDamping = true;
+      controls3D.dampingFactor = 0.05;
+
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene3D.add(ambLight);
+
+      const dirLight = new THREE.DirectionalLight(0x00f0ff, 1.8);
+      dirLight.position.set(20, 40, 20);
+      scene3D.add(dirLight);
+
+      const floorGeo = new THREE.PlaneGeometry(70, 70, 36, 36);
+      floorGeo.rotateX(-Math.PI / 2);
+      const pos = floorGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        pos.setY(i, Math.sin(x * 0.12) * Math.cos(z * 0.12) * 2.5 + Math.sin(x * 0.3) * 0.8);
+      }
+      floorGeo.computeVertexNormals();
+      const floorMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, wireframe: true, transparent: true, opacity: 0.25 });
+      const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      scene3D.add(floorMesh);
+
+      prismGroup = new THREE.Group();
+      scene3D.add(prismGroup);
+
+      raycaster3D = new THREE.Raycaster();
+      mouse3D = new THREE.Vector2();
+
+      render3DPrisms();
+
+      const tooltip = document.getElementById('threejs-tooltip');
+      container.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        mouse3D.x = ((e.clientX - rect.left) / container.clientWidth) * 2 - 1;
+        mouse3D.y = -((e.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+        raycaster3D.setFromCamera(mouse3D, camera3D);
+        const hits = raycaster3D.intersectObjects(prismGroup.children);
+
+        if (hits.length > 0) {
+          const d = hits[0].object.userData;
+          tooltip.style.display = 'block';
+          tooltip.style.left = `${e.clientX - rect.left}px`;
+          tooltip.style.top = `${e.clientY - rect.top}px`;
+          tooltip.innerHTML = `<strong>${d.name}</strong><br>${PARAM_CONFIG[threeSelectedParam].label}: <b>${d[threeSelectedParam]} ${PARAM_CONFIG[threeSelectedParam].unit}</b>`;
+        } else {
+          tooltip.style.display = 'none';
+        }
+      });
+
+      function animateMain3D() {
+        requestAnimationFrame(animateMain3D);
+        if (isRotating3D) {
+          prismGroup.rotation.y += 0.0035;
+          floorMesh.rotation.y += 0.001;
+        }
+        controls3D.update();
+        renderer3D.render(scene3D, camera3D);
+      }
+      animateMain3D();
+    }
+
+    function render3DPrisms() {
+      while (prismGroup.children.length > 0) {
+        prismGroup.remove(prismGroup.children[0]);
+      }
+
+      const values = UTTARAKHAND_DATA.map(d => d[threeSelectedParam]);
+      const maxVal = Math.max(...values);
+      const minVal = Math.min(...values);
+
+      const refLat = 30.1;
+      const refLng = 79.2;
+      const scaleCoord = 18.0;
+
+      UTTARAKHAND_DATA.forEach(d => {
+        const val = d[threeSelectedParam];
+        const norm = (val - minVal) / (maxVal - minVal || 1);
+        const height = Math.max(2.0, norm * 16.0);
+
+        const posX = (d.lng - refLng) * scaleCoord;
+        const posZ = -(d.lat - refLat) * scaleCoord;
+
+        const geom = new THREE.CylinderGeometry(1.6, 2.0, height, 6);
+        const mat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color().setHSL(0.52 + norm * 0.35, 0.9, 0.5),
+          roughness: 0.3,
+          metalness: 0.7
+        });
+
+        const cylinder = new THREE.Mesh(geom, mat);
+        cylinder.position.set(posX, height / 2, posZ);
+        cylinder.userData = d;
+
+        const edges = new THREE.EdgesGeometry(geom);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00f0ff }));
+        cylinder.add(line);
+
+        prismGroup.add(cylinder);
+      });
+    }
+
+    /* ==========================================================================
+       8. EXPORTS & UI BINDINGS
+       ========================================================================== */
+    function downloadCanvas(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function exportCSV() {
+      let csv = 'Rank,District,Division,Latitude,Longitude,Absolute_Relief_m,Relative_Relief_mkm2,Dissection_Index,Drainage_Density_kmkm2,Ruggedness_TRI,Wetness_TWI,WebGIS_URL\n';
+      UTTARAKHAND_DATA.forEach((d, idx) => {
+        const link = GITHUB_LINKS[d.name]?.[currentParam] || '';
+        csv += `${idx + 1},${d.name},${d.division},${d.lat},${d.lng},${d.ar},${d.rr},${d.di},${d.dd},${d.tri},${d.twi},${link}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `UMAS_Uttarakhand_Morphometric_Export.csv`;
+      a.click();
+    }
+
+    function setupEvents() {
+      const themeBtn = document.getElementById('btn-theme-toggle');
+      themeBtn.addEventListener('click', () => {
+        const html = document.documentElement;
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          html.setAttribute('data-theme', 'light');
+          themeBtn.innerText = '☾ DARK';
+          if (baseTileLayer) {
+            map.removeLayer(baseTileLayer);
+            baseTileLayer = L.tileLayer(BASEMAP_URLS.cartoLight, { maxZoom: 19, subdomains: 'abcd' }).addTo(map);
+          }
+        } else {
+          html.setAttribute('data-theme', 'dark');
+          themeBtn.innerText = '☼ LIGHT';
+          if (baseTileLayer) {
+            map.removeLayer(baseTileLayer);
+            baseTileLayer = L.tileLayer(BASEMAP_URLS.cartoDark, { maxZoom: 19, subdomains: 'abcd' }).addTo(map);
+          }
+        }
+      });
+
+      document.getElementById('district-search-input').addEventListener('input', (e) => {
+        renderDistrictCards(e.target.value);
+      });
+
+      document.getElementById('district-select').addEventListener('change', (e) => {
+        selectDistrict(e.target.value);
+      });
+
+      document.getElementById('parameter-select').addEventListener('change', (e) => {
+        currentParam = e.target.value;
+        document.getElementById('param-help-text').innerText = PARAM_CONFIG[currentParam].desc;
+        renderDistrictCards(document.getElementById('district-search-input').value);
+        renderDistrictPolygons();
+        renderDistrictPoints();
+        updateAllStatisticalCharts();
+      });
+
+      document.getElementById('btn-view-live-app').addEventListener('click', () => {
+        const url = GITHUB_LINKS[currentDistrict]?.[currentParam];
+        if (url) window.open(url, '_blank');
+      });
+
+      document.getElementById('btn-reset-filter').addEventListener('click', () => {
+        selectDistrict('Chamoli');
+        document.getElementById('district-search-input').value = '';
+        renderDistrictCards();
+        if (districtGeoJsonLayer) {
+          map.fitBounds(districtGeoJsonLayer.getBounds());
+        }
+      });
+
+      document.getElementById('layer-opacity-slider').addEventListener('input', (e) => {
+        document.getElementById('opacity-val').innerText = `${e.target.value}%`;
+        renderDistrictPolygons();
+      });
+
+      // Basemap Radio Buttons Listener
+      document.querySelectorAll('input[name="basemap"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const choice = e.target.value;
+          const url = BASEMAP_URLS[choice] || BASEMAP_URLS.cartoDark;
+          const subdomains = (choice === 'cartoDark' || choice === 'cartoLight') ? 'abcd' : 'abc';
+
+          if (map && baseTileLayer) {
+            map.removeLayer(baseTileLayer);
+            baseTileLayer = L.tileLayer(url, { maxZoom: 19, subdomains: subdomains }).addTo(map);
+            baseTileLayer.bringToBack();
+          }
+        });
+      });
+
+      document.getElementById('analytics-param-select').addEventListener('change', () => {
+        updateAllStatisticalCharts();
+      });
+
+      document.getElementById('three-param-select').addEventListener('change', (e) => {
+        threeSelectedParam = e.target.value;
+        render3DPrisms();
+      });
+
+      document.getElementById('btn-3d-rotate').addEventListener('click', function() {
+        isRotating3D = !isRotating3D;
+        this.innerText = isRotating3D ? '⏸ PAUSE' : '▶ ROTATE';
+      });
+      document.getElementById('btn-3d-reset').addEventListener('click', () => {
+        camera3D.position.set(0, 34, 48);
+        controls3D.target.set(0, 0, 0);
+      });
+
+      document.getElementById('btn-panel-csv').addEventListener('click', exportCSV);
+      document.getElementById('btn-export-all-csv').addEventListener('click', exportCSV);
+      document.getElementById('btn-panel-chart-png').addEventListener('click', () => downloadCanvas('topDistrictsChart', 'UMAS_Chart.png'));
+      document.getElementById('btn-export-top-png').addEventListener('click', () => downloadCanvas('topDistrictsChart', 'UMAS_Top_Districts.png'));
+      document.getElementById('btn-export-bottom-png').addEventListener('click', () => downloadCanvas('bottomDistrictsChart', 'UMAS_Bottom_Districts.png'));
+    }
+
+    /* Bootstrap Application */
+    window.addEventListener('DOMContentLoaded', () => {
+      initHeroBanner3D();
+      initMap();
+      renderDistrictCards();
+      initAnalyticsCharts();
+      renderHeatmap();
+      initTableSorting();
+      updateAllStatisticalCharts();
+      initMain3D();
+      setupEvents();
+    });
+  </script>
+</body>
+</html>
